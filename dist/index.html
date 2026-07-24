@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ml.box — solenopsisbot</title>
   <meta name="description" content="Developer and researcher. Interested in computers, programming, AI/ML, and anime.">
-  <meta name="theme-color" content="#0a0b10">
+  <meta name="theme-color" content="#07080c">
   
   <!-- OpenGraph / Social -->
   <meta property="og:title" content="ml.box — solenopsisbot">
@@ -19,121 +19,71 @@
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300..800;1,300..800&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
   <link rel="icon" type="image/webp" href="/solenopsisbot.webp">
-  <script type="module" crossorigin src="/assets/index-DN8xr7YJ.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-BVpCCLwI.css">
+  <script type="module" crossorigin src="/assets/index-DrNGQYoJ.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-Ijlt3khG.css">
 </head>
 <body>
   <!-- WebGL Background Canvas -->
   <canvas id="webgl-canvas"></canvas>
 
-  <!-- Ambient Overlay Effects -->
+  <!-- Ambient Overlay Vignette -->
   <div class="vignette"></div>
-  <div class="scanlines"></div>
 
   <!-- Main Container -->
   <main class="app-container">
     <div class="card-perspective">
       <article class="hero-card" id="hero-card">
         
-        <!-- Top Status Bar -->
+        <!-- Top Domain Header -->
         <header class="card-header">
           <div class="domain-badge">
-            <span class="pulse-dot"></span>
             <span class="domain-name">ml.box</span>
-          </div>
-          <div class="status-indicator">
-            <span class="status-text">SYSTEM ONLINE</span>
           </div>
         </header>
 
         <!-- Profile / Identity -->
         <section class="profile-section">
           <div class="avatar-wrapper">
-            <div class="avatar-ring"></div>
-            <img src="/solenopsisbot.webp" alt="solenopsisbot profile picture" class="avatar-img" id="avatar-img">
+            <img src="/solenopsisbot.webp" alt="solenopsisbot profile picture" class="avatar-img">
             <div class="avatar-glow"></div>
           </div>
 
           <div class="identity-info">
             <h1 class="user-handle">solenopsisbot</h1>
-            <p class="user-subtext">ml.box core node</p>
           </div>
         </section>
 
         <!-- Bio Box -->
         <section class="bio-section">
-          <div class="bio-content">
-            <p class="bio-text">
-              Developer and researcher. Interested in computers, programming, AI/ML, and anime.
-            </p>
-          </div>
+          <p class="bio-text">
+            Developer and researcher. Interested in computers, programming, AI/ML, and anime.
+          </p>
         </section>
 
-        <!-- Focus & Tech Tags -->
+        <!-- Focus Tags -->
         <section class="tags-section">
-          <h2 class="section-label">FOCUS & STACK</h2>
           <div class="tags-cloud">
-            <span class="tag"><i class="tag-icon">⚡</i> Machine Learning</span>
-            <span class="tag"><i class="tag-icon">🧠</i> Neural Architectures</span>
-            <span class="tag"><i class="tag-icon">🦀</i> Rust & C++</span>
-            <span class="tag"><i class="tag-icon">👁️</i> Computer Vision</span>
-            <span class="tag"><i class="tag-icon">🔮</i> WebGL & Shaders</span>
-            <span class="tag"><i class="tag-icon">✨</i> Anime & Tech</span>
+            <span class="tag">Machine Learning</span>
+            <span class="tag">Neural Architectures</span>
+            <span class="tag">Technology</span>
+            <span class="tag">Social AI</span>
           </div>
         </section>
 
-        <!-- Action & Social Links -->
+        <!-- Footer / GitHub Link -->
         <footer class="card-footer">
-          <div class="social-links">
-            <a href="https://github.com" target="_blank" rel="noopener noreferrer" class="social-btn" title="GitHub">
-              <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"></path><path d="M9 18c-4.51 2-5-2-7-2"></path></svg>
-              <span>GitHub</span>
-            </a>
-
-            <a href="https://x.com" target="_blank" rel="noopener noreferrer" class="social-btn" title="X (Twitter)">
-              <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l11.733 16h4.267l-11.733 -16z"></path><path d="M4 20l6.768 -6.768m2.46 -2.46l6.772 -6.772"></path></svg>
-              <span>X</span>
-            </a>
-
-            <button class="social-btn" id="pgp-btn" title="View PGP Key">
-              <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-              <span>PGP</span>
-            </button>
-          </div>
+          <a href="https://github.com/Solenopsisbot" target="_blank" rel="noopener noreferrer" class="social-btn" title="GitHub - Solenopsisbot">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"></path>
+              <path d="M9 18c-4.51 2-5-2-7-2"></path>
+            </svg>
+            <span>Solenopsisbot</span>
+          </a>
         </footer>
 
       </article>
     </div>
-
-    <!-- FX Controller Dock -->
-    <div class="fx-dock">
-      <div class="fx-title">SHADER FX</div>
-      <div class="fx-controls">
-        <button class="fx-mode-btn active" data-mode="neural">Neural</button>
-        <button class="fx-mode-btn" data-mode="cyber">Grid</button>
-        <button class="fx-mode-btn" data-mode="quantum">Quantum</button>
-      </div>
-      <div class="fx-meta">
-        <span id="fps-display">60 FPS</span>
-      </div>
-    </div>
   </main>
-
-  <!-- PGP Modal -->
-  <dialog class="pgp-modal" id="pgp-modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3>Public PGP Key</h3>
-        <button class="close-modal" id="close-pgp">&times;</button>
-      </div>
-      <pre class="pgp-key-box"><code>-----BEGIN PGP PUBLIC KEY BLOCK-----
-Comment: ml.box solenopsisbot key
-
-mQGNBF+... [solenopsisbot@ml.box]
------END PGP PUBLIC KEY BLOCK-----</code></pre>
-      <button class="copy-pgp-btn" id="copy-pgp">Copy Key</button>
-    </div>
-  </dialog>
 
 </body>
 </html>

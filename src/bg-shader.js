@@ -7,7 +7,7 @@ export class WebGLBackground {
 
     this.time = 0;
     this.init();
-    this.createPureWhite3DShape();
+    this.createSmallSeparatedWhiteDots();
     this.addEventListeners();
     this.animate();
   }
@@ -21,7 +21,7 @@ export class WebGLBackground {
       0.1,
       1000
     );
-    this.camera.position.set(0, 0, 38);
+    this.camera.position.set(0, 0, 42);
 
     this.renderer = new THREE.WebGLRenderer({
       canvas: this.canvas,
@@ -36,9 +36,9 @@ export class WebGLBackground {
     this.scene.add(this.group);
   }
 
-  // Create a sharp, pure white circular dot texture
-  createSharpWhiteDotTexture() {
-    const size = 64;
+  // Create a crisp, sharp micro-circle texture
+  createMicroDotTexture() {
+    const size = 32;
     const canvas = document.createElement('canvas');
     canvas.width = size;
     canvas.height = size;
@@ -58,36 +58,40 @@ export class WebGLBackground {
     return texture;
   }
 
-  createPureWhite3DShape() {
-    // We construct a distinct, recognizable 3D Torus Knot & Geodesic Lattice
-    this.dotsCount = 900;
+  createSmallSeparatedWhiteDots() {
+    // 750 evenly spaced micro-dots to ensure clear separation without clutter
+    this.dotsCount = 750;
     const geometry = new THREE.BufferGeometry();
     const positions = new Float32Array(this.dotsCount * 3);
 
     this.baseShapeCoords = [];
 
-    // Parametric Torus Knot (p=3, q=4) geometry + concentric orbital rings
     const p = 3;
     const q = 4;
+    const knotPointsCount = 520;
 
     for (let i = 0; i < this.dotsCount; i++) {
       let x, y, z;
 
-      if (i < 650) {
-        // Primary 3D Torus Knot Shape
-        const u = (i / 650) * Math.PI * 2 * p;
-        const r = 13 + 4 * Math.cos(q * u / p);
+      if (i < knotPointsCount) {
+        // Evenly spaced 3D Torus Knot curve coordinates
+        const u = (i / knotPointsCount) * Math.PI * 2 * p;
+        const r = 16 + 5 * Math.cos((q * u) / p);
 
         x = r * Math.cos(u);
         y = r * Math.sin(u);
-        z = 7 * Math.sin(q * u / p);
+        z = 9 * Math.sin((q * u) / p);
       } else {
-        // Outer 3D Orbital Ring
-        const angle = ((i - 650) / (this.dotsCount - 650)) * Math.PI * 2;
-        const radius = 22;
+        // Outer concentric 3D orbital rings with wide separation
+        const ringIdx = i - knotPointsCount;
+        const totalRingPoints = this.dotsCount - knotPointsCount;
+        const angle = (ringIdx / totalRingPoints) * Math.PI * 2;
+        
+        // Staggered radii to prevent overlap
+        const radius = 25 + (ringIdx % 3) * 3;
         x = radius * Math.cos(angle);
-        y = radius * Math.sin(angle) * 0.4;
-        z = radius * Math.sin(angle) * 0.9;
+        y = radius * Math.sin(angle) * 0.45;
+        z = radius * Math.sin(angle) * 0.85;
       }
 
       positions[i * 3] = x;
@@ -99,14 +103,14 @@ export class WebGLBackground {
 
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
 
-    // Pure white material with high visibility & crisp rendering
+    // Material configured for very small (0.85), pure-white, clearly separate micro-dots
     const material = new THREE.PointsMaterial({
-      size: 2.2,
-      map: this.createSharpWhiteDotTexture(),
+      size: 0.85,
+      map: this.createMicroDotTexture(),
       color: 0xffffff,
       transparent: true,
       opacity: 1.0,
-      alphaTest: 0.1,
+      alphaTest: 0.2,
       depthWrite: false
     });
 
@@ -127,27 +131,27 @@ export class WebGLBackground {
   animate() {
     requestAnimationFrame(() => this.animate());
 
-    this.time += 0.012;
+    this.time += 0.01;
     const pos = this.points.geometry.attributes.position.array;
 
-    // Organic 3D wave deformation over the rotating 3D Torus Knot
+    // Gentle wave propagation across the 3D shape while keeping dots separated
     for (let i = 0; i < this.dotsCount; i++) {
       const idx = i * 3;
       const base = this.baseShapeCoords[i];
 
-      const wave = Math.sin(this.time * 2 + base.x * 0.1 + base.y * 0.1) * 0.6;
+      const wave = Math.sin(this.time * 1.8 + base.x * 0.08 + base.y * 0.08) * 0.5;
 
-      pos[idx] = base.x + (base.x / 15) * wave;
-      pos[idx + 1] = base.y + (base.y / 15) * wave;
+      pos[idx] = base.x + (base.x / 18) * wave;
+      pos[idx + 1] = base.y + (base.y / 18) * wave;
       pos[idx + 2] = base.z + wave;
     }
 
     this.points.geometry.attributes.position.needsUpdate = true;
 
-    // Continuous multi-axis 3D rotation so the shape motion is 100% clear
-    this.group.rotation.x = this.time * 0.25;
-    this.group.rotation.y = this.time * 0.45;
-    this.group.rotation.z = Math.sin(this.time * 0.2) * 0.2;
+    // Smooth continuous multi-axis 3D rotation
+    this.group.rotation.x = this.time * 0.2;
+    this.group.rotation.y = this.time * 0.38;
+    this.group.rotation.z = Math.sin(this.time * 0.15) * 0.15;
 
     this.renderer.render(this.scene, this.camera);
   }

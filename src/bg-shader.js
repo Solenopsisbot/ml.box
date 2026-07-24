@@ -5,19 +5,16 @@ export class WebGLBackground {
     this.canvas = document.getElementById(canvasId);
     if (!this.canvas) return;
 
-    this.mouse = new THREE.Vector2(0, 0);
-    this.targetMouse = new THREE.Vector2(0, 0);
     this.time = 0;
-
     this.init();
-    this.createComplexFlowField();
+    this.createRoundWhiteDots();
     this.addEventListeners();
     this.animate();
   }
 
   init() {
     this.scene = new THREE.Scene();
-    this.scene.fog = new THREE.FogExp2(0x06070a, 0.012);
+    this.scene.fog = new THREE.FogExp2(0x050608, 0.015);
 
     this.camera = new THREE.PerspectiveCamera(
       55,
@@ -25,7 +22,7 @@ export class WebGLBackground {
       0.1,
       1000
     );
-    this.camera.position.z = 45;
+    this.camera.position.z = 42;
 
     this.renderer = new THREE.WebGLRenderer({
       canvas: this.canvas,
@@ -40,83 +37,81 @@ export class WebGLBackground {
     this.scene.add(this.group);
   }
 
-  createComplexFlowField() {
-    this.particleCount = 550;
+  // Create a soft round white dot texture programmatically
+  createCircleTexture() {
+    const size = 64;
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+
+    const center = size / 2;
+    const gradient = ctx.createRadialGradient(center, center, 0, center, center, center);
+    gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+    gradient.addColorStop(0.3, 'rgba(255, 255, 255, 0.8)');
+    gradient.addColorStop(0.7, 'rgba(255, 255, 255, 0.2)');
+    gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, size, size);
+
+    const texture = new THREE.Texture(canvas);
+    texture.needsUpdate = true;
+    return texture;
+  }
+
+  createRoundWhiteDots() {
+    this.particleCount = 1200;
     const geometry = new THREE.BufferGeometry();
     const positions = new Float32Array(this.particleCount * 3);
-    const colors = new Float32Array(this.particleCount * 3);
+    const scales = new Float32Array(this.particleCount);
 
-    this.velocities = new Float32Array(this.particleCount * 3);
-    this.initialPositions = new Float32Array(this.particleCount * 3);
-
-    // Subtle, elegant color palette (deep slate cyan & subtle indigo violet)
-    const colorCyan = new THREE.Color(0x38bdf8);
-    const colorViolet = new THREE.Color(0x818cf8);
-    const colorSlate = new THREE.Color(0x94a3b8);
+    // Parametric attributes for 3D trajectory math
+    this.params = [];
 
     for (let i = 0; i < this.particleCount; i++) {
-      const x = (Math.random() - 0.5) * 90;
-      const y = (Math.random() - 0.5) * 70;
-      const z = (Math.random() - 0.5) * 60;
+      // Trajectory mathematical constants for complex 3D orbital dynamics
+      const a = 12 + Math.random() * 26;
+      const b = 10 + Math.random() * 22;
+      const c = 8 + Math.random() * 20;
 
-      positions[i * 3] = x;
-      positions[i * 3 + 1] = y;
-      positions[i * 3 + 2] = z;
+      const freqX = 0.5 + Math.random() * 1.5;
+      const freqY = 0.5 + Math.random() * 1.5;
+      const freqZ = 0.5 + Math.random() * 1.5;
 
-      this.initialPositions[i * 3] = x;
-      this.initialPositions[i * 3 + 1] = y;
-      this.initialPositions[i * 3 + 2] = z;
+      const phaseX = Math.random() * Math.PI * 2;
+      const phaseY = Math.random() * Math.PI * 2;
+      const phaseZ = Math.random() * Math.PI * 2;
 
-      this.velocities[i * 3] = (Math.random() - 0.5) * 0.02;
-      this.velocities[i * 3 + 1] = (Math.random() - 0.5) * 0.02;
-      this.velocities[i * 3 + 2] = (Math.random() - 0.5) * 0.02;
+      const speed = 0.15 + Math.random() * 0.35;
 
-      // Color distribution: mostly slate/indigo with hints of soft cyan
-      const r = Math.random();
-      let c = colorSlate;
-      if (r > 0.5) c = colorViolet;
-      if (r > 0.85) c = colorCyan;
+      this.params.push({ a, b, c, freqX, freqY, freqZ, phaseX, phaseY, phaseZ, speed });
 
-      colors[i * 3] = c.r;
-      colors[i * 3 + 1] = c.g;
-      colors[i * 3 + 2] = c.b;
+      // Initial positions
+      positions[i * 3] = a * Math.sin(phaseX);
+      positions[i * 3 + 1] = b * Math.cos(phaseY);
+      positions[i * 3 + 2] = c * Math.sin(phaseZ);
+
+      scales[i] = 0.6 + Math.random() * 0.8;
     }
 
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
-    const particleMaterial = new THREE.PointsMaterial({
-      size: 0.75,
-      vertexColors: true,
+    const material = new THREE.PointsMaterial({
+      size: 1.2,
+      map: this.createCircleTexture(),
       transparent: true,
-      opacity: 0.65,
-      blending: THREE.AdditiveBlending
+      opacity: 0.85,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
     });
 
-    this.points = new THREE.Points(geometry, particleMaterial);
+    this.points = new THREE.Points(geometry, material);
     this.group.add(this.points);
-
-    // Subtle connection lines geometry
-    const lineMaterial = new THREE.LineBasicMaterial({
-      color: 0x64748b,
-      transparent: true,
-      opacity: 0.12,
-      blending: THREE.AdditiveBlending
-    });
-
-    const lineGeometry = new THREE.BufferGeometry();
-    this.linesMesh = new THREE.LineSegments(lineGeometry, lineMaterial);
-    this.group.add(this.linesMesh);
   }
 
   addEventListeners() {
     window.addEventListener('resize', () => this.onWindowResize());
-    window.addEventListener('mousemove', (e) => this.onMouseMove(e));
-  }
-
-  onMouseMove(e) {
-    this.targetMouse.x = (e.clientX / window.innerWidth) * 2 - 1;
-    this.targetMouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
   }
 
   onWindowResize() {
@@ -128,94 +123,30 @@ export class WebGLBackground {
   animate() {
     requestAnimationFrame(() => this.animate());
 
-    this.time += 0.005;
-
-    // Smooth mouse interpolation
-    this.mouse.x += (this.targetMouse.x - this.mouse.x) * 0.05;
-    this.mouse.y += (this.targetMouse.y - this.mouse.y) * 0.05;
-
-    // Subtle camera orbit based on mouse
-    this.camera.position.x = this.mouse.x * 6;
-    this.camera.position.y = this.mouse.y * 4;
-    this.camera.lookAt(0, 0, 0);
-
-    // 3D Vector field simulation
-    const pos = this.points.geometry.attributes.position.array;
-    const vels = this.velocities;
-    const inits = this.initialPositions;
-
-    const mouseWorld = new THREE.Vector3(this.mouse.x * 35, this.mouse.y * 25, 0);
+    this.time += 0.008;
+    const positions = this.points.geometry.attributes.position.array;
 
     for (let i = 0; i < this.particleCount; i++) {
       const idx = i * 3;
+      const p = this.params[i];
 
-      // Calculate curl noise field components
-      const px = pos[idx];
-      const py = pos[idx + 1];
-      const pz = pos[idx + 2];
+      const t = this.time * p.speed;
 
-      const flowX = Math.sin(py * 0.08 + this.time) * Math.cos(pz * 0.08 + this.time);
-      const flowY = Math.cos(px * 0.08 + this.time) * Math.sin(pz * 0.08 + this.time);
-      const flowZ = Math.sin(px * 0.08 + this.time) * Math.cos(py * 0.08 + this.time);
+      // Complex 3D Lissajous & Torus knot orbital motion equations
+      const x = p.a * Math.sin(t * p.freqX + p.phaseX) + 6 * Math.sin(t * 0.5 + p.phaseY);
+      const y = p.b * Math.cos(t * p.freqY + p.phaseY) + 5 * Math.sin(t * 0.7 + p.phaseZ);
+      const z = p.c * Math.sin(t * p.freqZ + p.phaseZ) * Math.cos(t * 0.4 + p.phaseX);
 
-      vels[idx] += flowX * 0.002;
-      vels[idx + 1] += flowY * 0.002;
-      vels[idx + 2] += flowZ * 0.002;
-
-      // Gentle mouse gravity attraction
-      const currentPos = new THREE.Vector3(px, py, pz);
-      const distToMouse = currentPos.distanceTo(mouseWorld);
-      if (distToMouse < 25) {
-        const force = (25 - distToMouse) * 0.0004;
-        const dir = currentPos.clone().sub(mouseWorld).normalize();
-        vels[idx] += dir.x * force;
-        vels[idx + 1] += dir.y * force;
-        vels[idx + 2] += dir.z * force;
-      }
-
-      // Restoring tether force to initial bounds
-      vels[idx] += (inits[idx] - px) * 0.0003;
-      vels[idx + 1] += (inits[idx + 1] - py) * 0.0003;
-      vels[idx + 2] += (inits[idx + 2] - pz) * 0.0003;
-
-      // Velocity damping
-      vels[idx] *= 0.96;
-      vels[idx + 1] *= 0.96;
-      vels[idx + 2] *= 0.96;
-
-      pos[idx] += vels[idx];
-      pos[idx + 1] += vels[idx + 1];
-      pos[idx + 2] += vels[idx + 2];
+      positions[idx] = x;
+      positions[idx + 1] = y;
+      positions[idx + 2] = z;
     }
 
     this.points.geometry.attributes.position.needsUpdate = true;
 
-    // Dynamic line connections between nearby particles
-    const linePositions = [];
-    const maxConnectDistSq = 8 * 8;
-
-    for (let i = 0; i < this.particleCount; i += 3) {
-      for (let j = i + 1; j < this.particleCount; j += 4) {
-        const dx = pos[i * 3] - pos[j * 3];
-        const dy = pos[i * 3 + 1] - pos[j * 3 + 1];
-        const dz = pos[i * 3 + 2] - pos[j * 3 + 2];
-        const distSq = dx * dx + dy * dy + dz * dz;
-
-        if (distSq < maxConnectDistSq) {
-          linePositions.push(
-            pos[i * 3], pos[i * 3 + 1], pos[i * 3 + 2],
-            pos[j * 3], pos[j * 3 + 1], pos[j * 3 + 2]
-          );
-        }
-      }
-    }
-
-    this.linesMesh.geometry.setAttribute(
-      'position',
-      new THREE.Float32BufferAttribute(linePositions, 3)
-    );
-
-    this.group.rotation.y = this.time * 0.03;
+    // Slow elegant rotation of the entire particle cloud
+    this.group.rotation.y = this.time * 0.05;
+    this.group.rotation.x = Math.sin(this.time * 0.03) * 0.15;
 
     this.renderer.render(this.scene, this.camera);
   }

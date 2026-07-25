@@ -1,27 +1,146 @@
 import * as THREE from 'three';
 
+const vertexShader = `
+varying vec2 vUv;
+void main() {
+  vUv = uv;
+  gl_Position = vec4(position, 1.0);
+}
+`;
+
+const fragmentShader = `
+uniform float uTime;
+uniform vec2 uResolution;
+uniform vec2 uMouse;
+varying vec2 vUv;
+
+#define MAX_STEPS 80
+#define SURF_DIST 0.002
+#define MAX_DIST 15.0
+
+float sdSmoothUnion(float d1, float d2, float k) {
+  float h = clamp(0.5 + 0.5 * (d2 - d1) / k, 0.0, 1.0);
+  return mix(d2, d1, h) - k * h * (1.0 - h);
+}
+
+float sdSphere(vec3 p, float r) {
+  return length(p) - r;
+}
+
+float map(vec3 p) {
+  float t = uTime * 0.5;
+  
+  // Primary fluid core metaballs revolving around origin
+  vec3 p1 = p - vec3(sin(t * 0.7) * 0.75, cos(t * 0.5) * 0.5, sin(t * 0.3) * 0.3);
+  float d1 = sdSphere(p1, 0.85);
+
+  vec3 p2 = p - vec3(cos(t * 0.8 + 1.5) * 0.95, sin(t * 0.6 + 0.5) * 0.7, cos(t * 0.4) * 0.4);
+  float d2 = sdSphere(p2, 0.65);
+
+  vec3 p3 = p - vec3(sin(t * 0.5 + 3.0) * 0.85, cos(t * 0.9 + 2.0) * 0.65, sin(t * 0.7 + 1.0) * 0.5);
+  float d3 = sdSphere(p3, 0.55);
+
+  // Interactive mouse influence metaball
+  vec3 pMouse = p - vec3(uMouse.x * 2.2, uMouse.y * 1.4, 0.2);
+  float dMouse = sdSphere(pMouse, 0.55);
+
+  // Organic smooth union of metaballs
+  float d = sdSmoothUnion(d1, d2, 0.55);
+  d = sdSmoothUnion(d, d3, 0.5);
+  d = sdSmoothUnion(d, dMouse, 0.6);
+
+  // Dynamic surface waves ripple
+  d += sin(p.x * 3.5 + t * 2.0) * cos(p.y * 3.5 + t * 1.5) * sin(p.z * 3.5 + t) * 0.035;
+
+  return d;
+}
+
+vec3 calcNormal(vec3 p) {
+  vec2 e = vec2(0.002, 0.0);
+  return normalize(vec3(
+    map(p + e.xyy) - map(p - e.xyy),
+    map(p + e.yxy) - map(p - e.yxy),
+    map(p + e.yyx) - map(p - e.yyx)
+  ));
+}
+
+void main() {
+  vec2 st = (gl_FragCoord.xy - 0.5 * uResolution.xy) / min(uResolution.x, uResolution.y);
+  
+  vec3 ro = vec3(0.0, 0.0, 3.2);
+  vec3 rd = normalize(vec3(st, -1.4));
+
+  float dO = 0.0;
+  float dS = 0.0;
+  vec3 p = ro;
+
+  for (int i = 0; i < MAX_STEPS; i++) {
+    p = ro + rd * dO;
+    dS = map(p);
+    dO += dS;
+    if (dS < SURF_DIST || dO > MAX_DIST) break;
+  }
+
+  // Ambient obsidian glow background
+  vec3 col = mix(vec3(0.02, 0.03, 0.05), vec3(0.06, 0.08, 0.12), length(st) * 0.8);
+
+  if (dS < SURF_DIST) {
+    vec3 n = calcNormal(p);
+    vec3 viewDir = -rd;
+
+    vec3 lightPos1 = vec3(2.5, 3.0, 3.0);
+    vec3 lightDir1 = normalize(lightPos1 - p);
+    vec3 lightPos2 = vec3(-2.5, -2.0, 2.0);
+    vec3 lightDir2 = normalize(lightPos2 - p);
+
+    float diff1 = max(dot(n, lightDir1), 0.0);
+    float diff2 = max(dot(n, lightDir2), 0.0);
+
+    vec3 ref1 = reflect(-lightDir1, n);
+    float spec1 = pow(max(dot(viewDir, ref1), 0.0), 32.0);
+
+    vec3 ref2 = reflect(-lightDir2, n);
+    float spec2 = pow(max(dot(viewDir, ref2), 0.0), 16.0);
+
+    float fresnel = pow(1.0 - max(dot(viewDir, n), 0.0), 3.0);
+
+    // Chromatic dispersion (RGB spectral shift)
+    vec3 chromatic = vec3(
+      dot(n, vec3(0.3, 0.6, 0.8)),
+      dot(n, vec3(0.5, 0.7, 0.4)),
+      dot(n, vec3(0.8, 0.4, 0.9))
+    );
+    chromatic = 0.5 + 0.5 * sin(chromatic * 4.0 + uTime * 0.5);
+
+    vec3 baseChrome = vec3(0.85, 0.90, 0.95);
+    vec3 matColor = mix(baseChrome, chromatic, 0.35);
+    vec3 specColor = vec3(1.0, 1.0, 1.0) * spec1 + vec3(0.7, 0.85, 1.0) * spec2;
+
+    col = matColor * (diff1 * 0.6 + diff2 * 0.3 + 0.25) + specColor * 0.8 + fresnel * chromatic * 0.6;
+    col = mix(col, vec3(0.03, 0.04, 0.06), smoothstep(2.0, 4.5, dO));
+  }
+
+  col *= 1.0 - 0.3 * length(st);
+  gl_FragColor = vec4(col, 1.0);
+}
+`;
+
 export class WebGLBackground {
   constructor(canvasId) {
     this.canvas = document.getElementById(canvasId);
     if (!this.canvas) return;
 
-    this.time = 0;
+    this.mouse = new THREE.Vector2(0, 0);
+    this.targetMouse = new THREE.Vector2(0, 0);
+
     this.init();
-    this.createCentralOrbitalDots();
     this.addEventListeners();
-    this.animate();
+    this.animate(0);
   }
 
   init() {
     this.scene = new THREE.Scene();
-
-    this.camera = new THREE.PerspectiveCamera(
-      50,
-      window.innerWidth / window.innerHeight,
-      0.1,
-      1000
-    );
-    this.camera.position.set(0, 0, 45);
+    this.camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
 
     this.renderer = new THREE.WebGLRenderer({
       canvas: this.canvas,
@@ -29,135 +148,61 @@ export class WebGLBackground {
       alpha: true,
       powerPreference: 'high-performance'
     });
+
+    const pixelRatio = Math.min(window.devicePixelRatio, 2);
     this.renderer.setSize(window.innerWidth, window.innerHeight);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.setPixelRatio(pixelRatio);
 
-    this.group = new THREE.Group();
-    this.scene.add(this.group);
-  }
+    this.uniforms = {
+      uTime: { value: 0 },
+      uResolution: { value: new THREE.Vector2(window.innerWidth * pixelRatio, window.innerHeight * pixelRatio) },
+      uMouse: { value: this.mouse }
+    };
 
-  // Create a soft glowing white orb texture for gorgeous frosted blur effect
-  createSoftGlowingOrbTexture() {
-    const size = 64;
-    const canvas = document.createElement('canvas');
-    canvas.width = size;
-    canvas.height = size;
-    const ctx = canvas.getContext('2d');
-
-    const center = size / 2;
-    const gradient = ctx.createRadialGradient(center, center, 0, center, center, center / 2);
-    gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
-    gradient.addColorStop(0.4, 'rgba(255, 255, 255, 0.8)');
-    gradient.addColorStop(0.8, 'rgba(255, 255, 255, 0.25)');
-    gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
-
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, size, size);
-
-    const texture = new THREE.Texture(canvas);
-    texture.needsUpdate = true;
-    return texture;
-  }
-
-  createCentralOrbitalDots() {
-    this.dotsCount = 450;
-    const geometry = new THREE.BufferGeometry();
-    const positions = new Float32Array(this.dotsCount * 3);
-
-    this.orbitalParams = [];
-
-    // Distribute orbs into concentric 3D orbital planes revolving around center (0,0,0)
-    for (let i = 0; i < this.dotsCount; i++) {
-      // Concentric orbital radii layers
-      const layer = i % 5;
-      const radius = 10 + layer * 6 + Math.random() * 3;
-
-      // Base orbital angle around center
-      const angle = (i / this.dotsCount) * Math.PI * 2 * 3 + Math.random() * 0.5;
-
-      // Inclination angle for 3D tilt of each orbital plane
-      const tiltX = ((layer * 36 - 45) * Math.PI) / 180;
-      const tiltY = ((layer * 25) * Math.PI) / 180;
-
-      // Slow orbital velocity
-      const speed = (0.08 + Math.random() * 0.12) * (i % 2 === 0 ? 1 : -1);
-
-      this.orbitalParams.push({
-        radius,
-        angle,
-        tiltX,
-        tiltY,
-        speed,
-        verticalPhase: Math.random() * Math.PI * 2
-      });
-
-      // Initial positions
-      const x = radius * Math.cos(angle);
-      const y = radius * Math.sin(angle) * Math.cos(tiltX);
-      const z = radius * Math.sin(angle) * Math.sin(tiltX);
-
-      positions[i * 3] = x;
-      positions[i * 3 + 1] = y;
-      positions[i * 3 + 2] = z;
-    }
-
-    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-
-    // Pure white glowing orbs
-    const material = new THREE.PointsMaterial({
-      size: 1.5,
-      map: this.createSoftGlowingOrbTexture(),
-      color: 0xffffff,
-      transparent: true,
-      opacity: 0.9,
+    const geometry = new THREE.PlaneGeometry(2, 2);
+    const material = new THREE.ShaderMaterial({
+      vertexShader,
+      fragmentShader,
+      uniforms: this.uniforms,
       depthWrite: false,
-      blending: THREE.AdditiveBlending
+      depthTest: false
     });
 
-    this.points = new THREE.Points(geometry, material);
-    this.group.add(this.points);
+    this.mesh = new THREE.Mesh(geometry, material);
+    this.scene.add(this.mesh);
   }
 
   addEventListeners() {
     window.addEventListener('resize', () => this.onWindowResize());
+    window.addEventListener('pointermove', (e) => this.onPointerMove(e));
+  }
+
+  onPointerMove(event) {
+    // Convert to normalized coordinates (-1 to 1)
+    this.targetMouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    this.targetMouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
   }
 
   onWindowResize() {
-    this.camera.aspect = window.innerWidth / window.innerHeight;
-    this.camera.updateProjectionMatrix();
+    const pixelRatio = Math.min(window.devicePixelRatio, 2);
     this.renderer.setSize(window.innerWidth, window.innerHeight);
+    this.renderer.setPixelRatio(pixelRatio);
+
+    this.uniforms.uResolution.value.set(
+      window.innerWidth * pixelRatio,
+      window.innerHeight * pixelRatio
+    );
   }
 
-  animate() {
-    requestAnimationFrame(() => this.animate());
+  animate(timestamp) {
+    requestAnimationFrame((t) => this.animate(t));
 
-    // Slow, serene animation time step
-    this.time += 0.0025;
-    const pos = this.points.geometry.attributes.position.array;
+    // Linear interpolation (lerp) for silky mouse motion
+    this.mouse.x += (this.targetMouse.x - this.mouse.x) * 0.05;
+    this.mouse.y += (this.targetMouse.y - this.mouse.y) * 0.05;
 
-    for (let i = 0; i < this.dotsCount; i++) {
-      const idx = i * 3;
-      const orb = this.orbitalParams[i];
-
-      // Smooth central revolution around origin (0,0,0)
-      const currentAngle = orb.angle + this.time * orb.speed * 2;
-      const wave = Math.sin(this.time * 1.5 + orb.verticalPhase) * 1.5;
-
-      const px = (orb.radius + wave) * Math.cos(currentAngle);
-      const py = (orb.radius + wave) * Math.sin(currentAngle) * Math.cos(orb.tiltX);
-      const pz = (orb.radius + wave) * Math.sin(currentAngle) * Math.sin(orb.tiltX) + Math.cos(currentAngle) * Math.sin(orb.tiltY) * 6;
-
-      pos[idx] = px;
-      pos[idx + 1] = py;
-      pos[idx + 2] = pz;
-    }
-
-    this.points.geometry.attributes.position.needsUpdate = true;
-
-    // Slow orbital rotation of the overall central system
-    this.group.rotation.y = this.time * 0.08;
-    this.group.rotation.x = Math.sin(this.time * 0.05) * 0.1;
-
+    this.uniforms.uTime.value = timestamp * 0.001;
     this.renderer.render(this.scene, this.camera);
   }
 }
+

@@ -7,7 +7,7 @@ export class WebGLBackground {
 
     this.time = 0;
     this.init();
-    this.createSmallSeparatedWhiteDots();
+    this.createCentralOrbitalDots();
     this.addEventListeners();
     this.animate();
   }
@@ -21,7 +21,7 @@ export class WebGLBackground {
       0.1,
       1000
     );
-    this.camera.position.set(0, 0, 42);
+    this.camera.position.set(0, 0, 45);
 
     this.renderer = new THREE.WebGLRenderer({
       canvas: this.canvas,
@@ -36,82 +36,82 @@ export class WebGLBackground {
     this.scene.add(this.group);
   }
 
-  // Create a crisp, sharp micro-circle texture
-  createMicroDotTexture() {
-    const size = 32;
+  // Create a soft glowing white orb texture for gorgeous frosted blur effect
+  createSoftGlowingOrbTexture() {
+    const size = 64;
     const canvas = document.createElement('canvas');
     canvas.width = size;
     canvas.height = size;
     const ctx = canvas.getContext('2d');
 
     const center = size / 2;
-    const radius = size / 2 - 2;
+    const gradient = ctx.createRadialGradient(center, center, 0, center, center, center / 2);
+    gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+    gradient.addColorStop(0.4, 'rgba(255, 255, 255, 0.8)');
+    gradient.addColorStop(0.8, 'rgba(255, 255, 255, 0.25)');
+    gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
 
-    ctx.clearRect(0, 0, size, size);
-    ctx.beginPath();
-    ctx.arc(center, center, radius, 0, Math.PI * 2);
-    ctx.fillStyle = '#ffffff';
-    ctx.fill();
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, size, size);
 
     const texture = new THREE.Texture(canvas);
     texture.needsUpdate = true;
     return texture;
   }
 
-  createSmallSeparatedWhiteDots() {
-    // 750 evenly spaced micro-dots to ensure clear separation without clutter
-    this.dotsCount = 750;
+  createCentralOrbitalDots() {
+    this.dotsCount = 450;
     const geometry = new THREE.BufferGeometry();
     const positions = new Float32Array(this.dotsCount * 3);
 
-    this.baseShapeCoords = [];
+    this.orbitalParams = [];
 
-    const p = 3;
-    const q = 4;
-    const knotPointsCount = 520;
-
+    // Distribute orbs into concentric 3D orbital planes revolving around center (0,0,0)
     for (let i = 0; i < this.dotsCount; i++) {
-      let x, y, z;
+      // Concentric orbital radii layers
+      const layer = i % 5;
+      const radius = 10 + layer * 6 + Math.random() * 3;
 
-      if (i < knotPointsCount) {
-        // Evenly spaced 3D Torus Knot curve coordinates
-        const u = (i / knotPointsCount) * Math.PI * 2 * p;
-        const r = 16 + 5 * Math.cos((q * u) / p);
+      // Base orbital angle around center
+      const angle = (i / this.dotsCount) * Math.PI * 2 * 3 + Math.random() * 0.5;
 
-        x = r * Math.cos(u);
-        y = r * Math.sin(u);
-        z = 9 * Math.sin((q * u) / p);
-      } else {
-        // Outer concentric 3D orbital rings with wide separation
-        const ringIdx = i - knotPointsCount;
-        const totalRingPoints = this.dotsCount - knotPointsCount;
-        const angle = (ringIdx / totalRingPoints) * Math.PI * 2;
-        
-        // Staggered radii to prevent overlap
-        const radius = 25 + (ringIdx % 3) * 3;
-        x = radius * Math.cos(angle);
-        y = radius * Math.sin(angle) * 0.45;
-        z = radius * Math.sin(angle) * 0.85;
-      }
+      // Inclination angle for 3D tilt of each orbital plane
+      const tiltX = ((layer * 36 - 45) * Math.PI) / 180;
+      const tiltY = ((layer * 25) * Math.PI) / 180;
+
+      // Slow orbital velocity
+      const speed = (0.08 + Math.random() * 0.12) * (i % 2 === 0 ? 1 : -1);
+
+      this.orbitalParams.push({
+        radius,
+        angle,
+        tiltX,
+        tiltY,
+        speed,
+        verticalPhase: Math.random() * Math.PI * 2
+      });
+
+      // Initial positions
+      const x = radius * Math.cos(angle);
+      const y = radius * Math.sin(angle) * Math.cos(tiltX);
+      const z = radius * Math.sin(angle) * Math.sin(tiltX);
 
       positions[i * 3] = x;
       positions[i * 3 + 1] = y;
       positions[i * 3 + 2] = z;
-
-      this.baseShapeCoords.push({ x, y, z });
     }
 
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
 
-    // Material configured for very small (0.85), pure-white, clearly separate micro-dots
+    // Pure white glowing orbs
     const material = new THREE.PointsMaterial({
-      size: 0.85,
-      map: this.createMicroDotTexture(),
+      size: 1.5,
+      map: this.createSoftGlowingOrbTexture(),
       color: 0xffffff,
       transparent: true,
-      opacity: 1.0,
-      alphaTest: 0.2,
-      depthWrite: false
+      opacity: 0.9,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending
     });
 
     this.points = new THREE.Points(geometry, material);
@@ -131,27 +131,32 @@ export class WebGLBackground {
   animate() {
     requestAnimationFrame(() => this.animate());
 
-    this.time += 0.01;
+    // Slow, serene animation time step
+    this.time += 0.0025;
     const pos = this.points.geometry.attributes.position.array;
 
-    // Gentle wave propagation across the 3D shape while keeping dots separated
     for (let i = 0; i < this.dotsCount; i++) {
       const idx = i * 3;
-      const base = this.baseShapeCoords[i];
+      const orb = this.orbitalParams[i];
 
-      const wave = Math.sin(this.time * 1.8 + base.x * 0.08 + base.y * 0.08) * 0.5;
+      // Smooth central revolution around origin (0,0,0)
+      const currentAngle = orb.angle + this.time * orb.speed * 2;
+      const wave = Math.sin(this.time * 1.5 + orb.verticalPhase) * 1.5;
 
-      pos[idx] = base.x + (base.x / 18) * wave;
-      pos[idx + 1] = base.y + (base.y / 18) * wave;
-      pos[idx + 2] = base.z + wave;
+      const px = (orb.radius + wave) * Math.cos(currentAngle);
+      const py = (orb.radius + wave) * Math.sin(currentAngle) * Math.cos(orb.tiltX);
+      const pz = (orb.radius + wave) * Math.sin(currentAngle) * Math.sin(orb.tiltX) + Math.cos(currentAngle) * Math.sin(orb.tiltY) * 6;
+
+      pos[idx] = px;
+      pos[idx + 1] = py;
+      pos[idx + 2] = pz;
     }
 
     this.points.geometry.attributes.position.needsUpdate = true;
 
-    // Smooth continuous multi-axis 3D rotation
-    this.group.rotation.x = this.time * 0.2;
-    this.group.rotation.y = this.time * 0.38;
-    this.group.rotation.z = Math.sin(this.time * 0.15) * 0.15;
+    // Slow orbital rotation of the overall central system
+    this.group.rotation.y = this.time * 0.08;
+    this.group.rotation.x = Math.sin(this.time * 0.05) * 0.1;
 
     this.renderer.render(this.scene, this.camera);
   }

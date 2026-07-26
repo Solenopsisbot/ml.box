@@ -1,311 +1,493 @@
-/* Design System Tokens */
+/* ==========================================================================
+   Self-hosted fonts
+   Variable woff2, latin + latin-ext subsets, served from our own origin.
+   unicode-range means latin-ext is only fetched if the page actually uses
+   those codepoints, so the common case downloads two files.
+   ========================================================================== */
+
+@font-face {
+	font-family: 'Outfit';
+	font-style: normal;
+	font-weight: 100 900;
+	font-display: swap;
+	src: url('/fonts/outfit-latin.woff2') format('woff2');
+	unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+	font-family: 'Outfit';
+	font-style: normal;
+	font-weight: 100 900;
+	font-display: swap;
+	src: url('/fonts/outfit-latin-ext.woff2') format('woff2');
+	unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+	font-family: 'JetBrains Mono';
+	font-style: normal;
+	font-weight: 400 800;
+	font-display: swap;
+	src: url('/fonts/jetbrains-mono-latin.woff2') format('woff2');
+	unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+	font-family: 'JetBrains Mono';
+	font-style: normal;
+	font-weight: 400 800;
+	font-display: swap;
+	src: url('/fonts/jetbrains-mono-latin-ext.woff2') format('woff2');
+	unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/* ==========================================================================
+   Design system tokens
+   ========================================================================== */
+
 :root {
-  --bg-dark: #050608;
-  --card-bg: rgba(12, 15, 23, 0.78);
-  --card-border: rgba(255, 255, 255, 0.1);
-  --card-border-hover: rgba(255, 255, 255, 0.22);
-  
-  --accent-white: #ffffff;
-  --accent-slate: #cbd5e1;
-  
-  --text-main: #f8fafc;
-  --text-muted: #94a3b8;
-  --text-dim: #64748b;
+	--bg-dark: #050608;
+	--card-bg: rgba(12, 15, 23, 0.78);
+	--card-border: rgba(255, 255, 255, 0.1);
+	--card-border-hover: rgba(255, 255, 255, 0.22);
 
-  --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
+	--accent-white: #ffffff;
+	--accent-slate: #cbd5e1;
 
-  --radius-lg: 24px;
-  --radius-md: 14px;
-  --radius-sm: 8px;
+	--text-main: #f8fafc;
+	--text-muted: #94a3b8;
+	--text-dim: #64748b;
+
+	--font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+	--font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+	--radius-lg: 24px;
+	--radius-md: 14px;
+	--radius-sm: 8px;
+
+	--focus-ring: 2px solid #7dd3fc;
+
+	/* Single source of truth for the hero's vertical rhythm. */
+	--hero-min-height: 100svh;
 }
 
-*, *::before, *::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+	margin: 0;
+	padding: 0;
 }
 
-html, body {
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  background-color: var(--bg-dark);
-  color: var(--text-main);
-  font-family: var(--font-sans);
-  -webkit-font-smoothing: antialiased;
+/* The page scrolls. This is what makes future sections possible: append a
+   <section> after .hero and it flows below without touching the layout. */
+html {
+	scroll-behavior: smooth;
 }
 
-/* Background Canvas */
+body {
+	width: 100%;
+	min-height: 100vh; /* fallback for browsers without svh */
+	min-height: var(--hero-min-height);
+	background-color: var(--bg-dark);
+	color: var(--text-main);
+	font-family: var(--font-sans);
+	line-height: 1.5;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	overflow-x: hidden;
+}
+
+/* ==========================================================================
+   Accessibility
+   ========================================================================== */
+
+.skip-link {
+	position: absolute;
+	top: 0;
+	left: 50%;
+	transform: translate(-50%, -150%);
+	z-index: 100;
+	background: #0c0f17;
+	color: var(--text-main);
+	border: 1px solid var(--card-border-hover);
+	border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+	padding: 0.7rem 1.2rem;
+	font-size: 0.85rem;
+	font-weight: 600;
+	text-decoration: none;
+	transition: transform 0.2s ease;
+}
+
+.skip-link:focus-visible {
+	transform: translate(-50%, 0);
+	outline: var(--focus-ring);
+	outline-offset: 2px;
+}
+
+:where(a, button, [tabindex]):focus-visible {
+	outline: var(--focus-ring);
+	outline-offset: 3px;
+	border-radius: var(--radius-sm);
+}
+
+/* ==========================================================================
+   Ambient background stack
+   Fixed so it stays put once the document is taller than the viewport.
+   ========================================================================== */
+
 #webgl-canvas {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 0;
-  pointer-events: none;
+	position: fixed;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	z-index: 0;
+	pointer-events: none;
+	/* The shader renders below CSS resolution on purpose — it sits behind a
+	   16px blur, so sharpness is wasted GPU time. */
 }
 
-/* Frosted Glass Layer over background canvas */
 .frosted-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 1;
-  backdrop-filter: blur(16px) saturate(130%);
-  -webkit-backdrop-filter: blur(16px) saturate(130%);
-  background: rgba(5, 6, 8, 0.35);
-  pointer-events: none;
+	position: fixed;
+	inset: 0;
+	z-index: 1;
+	backdrop-filter: blur(16px) saturate(130%);
+	-webkit-backdrop-filter: blur(16px) saturate(130%);
+	background: rgba(5, 6, 8, 0.35);
+	pointer-events: none;
 }
 
-/* Vignette Overlay */
 .vignette {
-  position: fixed;
-  inset: 0;
-  background: radial-gradient(circle at center, transparent 25%, rgba(5, 6, 8, 0.85) 100%);
-  pointer-events: none;
-  z-index: 2;
+	position: fixed;
+	inset: 0;
+	z-index: 2;
+	background: radial-gradient(circle at center, transparent 25%, rgba(5, 6, 8, 0.85) 100%);
+	pointer-events: none;
 }
 
-/* Main Layout */
+/* ==========================================================================
+   Layout
+   ========================================================================== */
+
 .app-container {
-  position: relative;
-  z-index: 3;
-  width: 100vw;
-  height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1.5rem;
+	position: relative;
+	z-index: 3;
+	width: 100%;
 }
 
-/* Static Hero Card - Zero Movement */
+.hero {
+	min-height: 100vh;
+	min-height: var(--hero-min-height);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: clamp(1.25rem, 4vw, 2.5rem) 1.5rem;
+}
+
+/* ==========================================================================
+   Hero card — intentionally static. No parallax, no tilt. See AGENTS.md.
+   ========================================================================== */
+
 .hero-card {
-  position: relative;
-  width: 100%;
-  max-width: 440px;
-  background: var(--card-bg);
-  backdrop-filter: blur(28px) saturate(190%);
-  -webkit-backdrop-filter: blur(28px) saturate(190%);
-  border: 1px solid var(--card-border);
-  border-radius: var(--radius-lg);
-  padding: 2.25rem 2rem;
-  box-shadow: 
-    0 30px 60px -15px rgba(0, 0, 0, 0.85),
-    0 0 40px rgba(255, 255, 255, 0.02),
-    inset 0 1px 1px rgba(255, 255, 255, 0.12);
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
-  transform: none !important;
+	position: relative;
+	width: 100%;
+	max-width: 440px;
+	background: var(--card-bg);
+	backdrop-filter: blur(28px) saturate(190%);
+	-webkit-backdrop-filter: blur(28px) saturate(190%);
+	border: 1px solid var(--card-border);
+	border-radius: var(--radius-lg);
+	padding: 2.25rem 2rem;
+	box-shadow:
+		0 30px 60px -15px rgba(0, 0, 0, 0.85),
+		0 0 40px rgba(255, 255, 255, 0.02),
+		inset 0 1px 1px rgba(255, 255, 255, 0.12);
+	transition:
+		border-color 0.3s ease,
+		box-shadow 0.3s ease;
 }
 
 .hero-card:hover {
-  border-color: var(--card-border-hover);
-  box-shadow: 
-    0 35px 70px -15px rgba(0, 0, 0, 0.9),
-    0 0 50px rgba(255, 255, 255, 0.04),
-    inset 0 1px 2px rgba(255, 255, 255, 0.2);
+	border-color: var(--card-border-hover);
+	box-shadow:
+		0 35px 70px -15px rgba(0, 0, 0, 0.9),
+		0 0 50px rgba(255, 255, 255, 0.04),
+		inset 0 1px 2px rgba(255, 255, 255, 0.2);
 }
 
-/* Card Header */
+/* Entrance animation, only once JS has mounted. A no-JS visitor never gets
+   .is-ready, so nothing is ever hidden from them. */
+.is-ready .hero-card {
+	animation: card-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes card-in {
+	from {
+		opacity: 0;
+		transform: translateY(12px);
+	}
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+
+/* Card header */
 .card-header {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 2rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin-bottom: 2rem;
 }
 
 .domain-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  padding: 0.32rem 0.95rem;
-  border-radius: 20px;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+	background: rgba(255, 255, 255, 0.04);
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	padding: 0.32rem 0.95rem;
+	border-radius: 20px;
 }
 
 .pill-dot {
-  width: 6px;
-  height: 6px;
-  background-color: #fff;
-  border-radius: 50%;
-  box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+	width: 6px;
+	height: 6px;
+	background-color: #fff;
+	border-radius: 50%;
+	box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
 }
 
 .domain-text {
-  font-family: var(--font-mono);
-  font-weight: 600;
-  font-size: 0.82rem;
-  color: var(--text-main);
-  letter-spacing: 0.08em;
+	font-family: var(--font-mono);
+	font-weight: 600;
+	font-size: 0.82rem;
+	color: var(--text-main);
+	letter-spacing: 0.08em;
 }
 
-/* Profile Section */
+/* Profile */
 .profile-section {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  margin-bottom: 1.65rem;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	text-align: center;
+	margin-bottom: 1.65rem;
 }
 
 .avatar-frame {
-  position: relative;
-  width: 108px;
-  height: 108px;
-  margin-bottom: 1.25rem;
+	position: relative;
+	width: 108px;
+	height: 108px;
+	margin-bottom: 1.25rem;
 }
 
 .avatar-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 50%;
-  position: relative;
-  z-index: 2;
-  border: 2px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-  transition: transform 0.3s ease;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	border-radius: 50%;
+	position: relative;
+	z-index: 2;
+	border: 2px solid rgba(255, 255, 255, 0.2);
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+	transition: transform 0.3s ease;
 }
 
 .avatar-frame:hover .avatar-img {
-  transform: scale(1.03);
+	transform: scale(1.03);
 }
 
 .avatar-halo {
-  position: absolute;
-  inset: -8px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.18) 0%, transparent 70%);
-  z-index: 1;
-  filter: blur(8px);
+	position: absolute;
+	inset: -8px;
+	border-radius: 50%;
+	background: radial-gradient(circle, rgba(255, 255, 255, 0.18) 0%, transparent 70%);
+	z-index: 1;
+	filter: blur(8px);
 }
 
-.identity-info .user-handle {
-  font-size: 1.75rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  color: var(--text-main);
-  margin-bottom: 0.2rem;
+.user-handle {
+	font-size: clamp(1.55rem, 5vw, 1.75rem);
+	font-weight: 800;
+	letter-spacing: -0.02em;
+	line-height: 1.15;
+	color: var(--text-main);
+	margin-bottom: 0.25rem;
 }
 
-.identity-info .user-sublabel {
-  font-family: var(--font-mono);
-  font-size: 0.76rem;
-  color: var(--text-muted);
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+.user-sublabel {
+	font-family: var(--font-mono);
+	font-size: 0.76rem;
+	color: var(--text-muted);
+	letter-spacing: 0.05em;
+	text-transform: uppercase;
 }
 
-/* Bio Section */
+/* Bio */
 .bio-section {
-  position: relative;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: var(--radius-md);
-  padding: 1.15rem 1.25rem 1.15rem 1.5rem;
-  margin-bottom: 1.65rem;
-  overflow: hidden;
+	position: relative;
+	background: rgba(255, 255, 255, 0.03);
+	border: 1px solid rgba(255, 255, 255, 0.07);
+	border-radius: var(--radius-md);
+	padding: 1.15rem 1.25rem 1.15rem 1.5rem;
+	margin-bottom: 1.65rem;
+	overflow: hidden;
 }
 
 .bio-accent-bar {
-  position: absolute;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  width: 3px;
-  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.15));
+	position: absolute;
+	top: 0;
+	left: 0;
+	bottom: 0;
+	width: 3px;
+	background: linear-gradient(to bottom, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.15));
 }
 
 .bio-text {
-  font-size: 0.94rem;
-  line-height: 1.6;
-  color: #e2e8f0;
-  font-weight: 400;
+	font-size: 0.94rem;
+	line-height: 1.6;
+	color: #e2e8f0;
+	font-weight: 400;
 }
 
-/* Focus Tags Section */
+/* Focus tags */
 .tags-section {
-  margin-bottom: 1.75rem;
+	margin-bottom: 1.75rem;
 }
 
 .section-heading {
-  display: block;
-  font-family: var(--font-mono);
-  font-size: 0.65rem;
-  font-weight: 700;
-  color: var(--text-dim);
-  letter-spacing: 0.14em;
-  margin-bottom: 0.75rem;
-  text-align: center;
+	display: block;
+	font-family: var(--font-mono);
+	font-size: 0.65rem;
+	font-weight: 700;
+	color: var(--text-dim);
+	letter-spacing: 0.14em;
+	text-transform: uppercase;
+	margin-bottom: 0.75rem;
+	text-align: center;
 }
 
 .tags-cloud {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.5rem;
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: 0.5rem;
+	list-style: none;
 }
 
 .tag {
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: #cbd5e1;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  padding: 0.42rem 0.85rem;
-  border-radius: var(--radius-sm);
-  transition: all 0.2s ease;
-  user-select: none;
+	font-size: 0.8rem;
+	font-weight: 500;
+	color: #cbd5e1;
+	background: rgba(255, 255, 255, 0.04);
+	border: 1px solid rgba(255, 255, 255, 0.09);
+	padding: 0.42rem 0.85rem;
+	border-radius: var(--radius-sm);
+	transition:
+		background-color 0.2s ease,
+		border-color 0.2s ease,
+		color 0.2s ease,
+		transform 0.2s ease;
+	user-select: none;
 }
 
 .tag:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.3);
-  color: #fff;
-  transform: translateY(-1px);
+	background: rgba(255, 255, 255, 0.1);
+	border-color: rgba(255, 255, 255, 0.3);
+	color: #fff;
+	transform: translateY(-1px);
 }
 
-/* Footer / GitHub Primary Button */
+/* Links */
 .card-footer {
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  padding-top: 1.25rem;
+	border-top: 1px solid rgba(255, 255, 255, 0.08);
+	padding-top: 1.25rem;
 }
 
-.github-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.6rem;
-  width: 100%;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  color: var(--text-main);
-  text-decoration: none;
-  font-family: var(--font-sans);
-  font-size: 0.9rem;
-  font-weight: 600;
-  padding: 0.75rem 1.25rem;
-  border-radius: var(--radius-md);
-  transition: all 0.25s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+.link-list {
+	list-style: none;
+	display: grid;
+	gap: 0.6rem;
 }
 
-.github-btn:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.35);
-  color: #fff;
-  transform: translateY(-1px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+.link-btn {
+	display: flex;
+	align-items: center;
+	gap: 0.6rem;
+	width: 100%;
+	background: rgba(255, 255, 255, 0.06);
+	border: 1px solid rgba(255, 255, 255, 0.14);
+	color: var(--text-main);
+	text-decoration: none;
+	font-size: 0.9rem;
+	font-weight: 600;
+	padding: 0.75rem 1.1rem;
+	border-radius: var(--radius-md);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+	transition:
+		background-color 0.25s ease,
+		border-color 0.25s ease,
+		transform 0.25s ease,
+		box-shadow 0.25s ease;
 }
 
-.github-icon {
-  flex-shrink: 0;
+.link-btn:hover {
+	background: rgba(255, 255, 255, 0.12);
+	border-color: rgba(255, 255, 255, 0.35);
+	color: #fff;
+	transform: translateY(-1px);
+	box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
 }
 
-/* Responsive */
+.link-icon {
+	flex-shrink: 0;
+}
+
+.btn-meta {
+	margin-left: auto;
+	font-family: var(--font-mono);
+	font-size: 0.74rem;
+	font-weight: 500;
+	color: var(--text-muted);
+	letter-spacing: 0.02em;
+}
+
+/* ==========================================================================
+   Responsive
+   ========================================================================== */
+
 @media (max-width: 480px) {
-  .hero-card {
-    padding: 1.75rem 1.25rem;
-  }
+	.hero-card {
+		padding: 1.75rem 1.25rem;
+	}
+
+	.btn-meta {
+		display: none;
+	}
+}
+
+/* ==========================================================================
+   Reduced motion
+   The shader also stops animating (see bg-shader.js) — this only covers CSS.
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+	html {
+		scroll-behavior: auto;
+	}
+
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+	}
+
+	.avatar-frame:hover .avatar-img,
+	.tag:hover,
+	.link-btn:hover {
+		transform: none;
+	}
 }

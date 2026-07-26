@@ -2,3 +2,10 @@ node_modules
 dist
 .DS_Store
 *.log
+
+# Cloudflare Wrangler local state
+.wrangler
+
+# Build-time artefacts (static TTF instances + font metrics for OG rendering).
+# Regenerate with: npm run og
+.cache

@@ -163,7 +163,59 @@ try {
 	);
 	check('zero third-party requests', thirdParty.length === 0, thirdParty.join(', '));
 
+	// Every section heading must be reachable and labelled.
+	const sections = await page.evaluate(() =>
+		[...document.querySelectorAll('.section[aria-labelledby]')].map((s) => ({
+			id: s.id,
+			labelled: !!document.getElementById(s.getAttribute('aria-labelledby')),
+		})),
+	);
+	check(
+		'content sections present and aria-labelled',
+		sections.length >= 3 && sections.every((s) => s.id && s.labelled),
+		sections.map((s) => s.id).join(', '),
+	);
+
+	// Scroll cue is load-bearing: the hero fills the viewport.
+	const cue = await page.evaluate(async () => {
+		const el = document.querySelector('.scroll-cue');
+		if (!el) return { ok: false };
+		const before = getComputedStyle(el).opacity;
+		window.scrollTo({ top: 400, behavior: 'instant' });
+		await new Promise((r) => setTimeout(r, 300));
+		const after = getComputedStyle(el).opacity;
+		window.scrollTo({ top: 0, behavior: 'instant' });
+		return { ok: true, before: +before, after: +after };
+	});
+	check(
+		'scroll cue visible at top, hidden after scrolling',
+		cue.ok && cue.before > 0.9 && cue.after < 0.1,
+		cue.ok ? `opacity ${cue.before} -> ${cue.after}` : 'cue missing',
+	);
+
+	const copyBtn = await page.evaluate(() => {
+		const b = document.querySelector('.copy-btn[data-copy]');
+		return { present: !!b, revealed: b ? !b.hidden : false, value: b?.dataset.copy };
+	});
+	check(
+		'clipboard button revealed by progressive enhancement',
+		copyBtn.present && copyBtn.revealed,
+		copyBtn.value,
+	);
+
+	// mailto must survive the HTML-entity encoding of the @ sign.
+	const mailto = await page.evaluate(() => {
+		const a = document.querySelector('a[href^="mailto:"]');
+		return { href: a?.getAttribute('href'), text: a?.querySelector('.contact-value')?.textContent };
+	});
+	check(
+		'mailto href decodes correctly',
+		/^mailto:[^@\s]+@[^@\s]+\.[a-z]+$/i.test(mailto.href ?? ''),
+		mailto.href,
+	);
+
 	await page.screenshot({ path: join(OUT, 'hero.png') });
+	await page.screenshot({ path: join(OUT, 'full.png'), fullPage: true });
 	await page.close();
 
 	/* -------------------------------------------------------- reduced motion */
@@ -191,6 +243,27 @@ try {
 	check('no horizontal overflow at 390px', overflow);
 
 	await mPage.screenshot({ path: join(OUT, 'hero-mobile.png') });
+
+	// 320px is the real narrow edge (iPhone SE). The email address is the
+	// longest unbreakable-ish string on the page, so this is where it shows.
+	for (const width of [320, 360]) {
+		await mPage.setViewport({ width, height: 700, deviceScaleFactor: 2, isMobile: true });
+		await mPage.reload({ waitUntil: 'networkidle0' });
+		await new Promise((r) => setTimeout(r, 500));
+		const narrow = await mPage.evaluate(() => {
+			const v = document.querySelector('a[href^="mailto:"] .contact-value');
+			return {
+				overflow: document.documentElement.scrollWidth - window.innerWidth,
+				emailFits: v.scrollWidth <= v.clientWidth + 1,
+			};
+		});
+		check(
+			`no horizontal overflow at ${width}px, email not clipped`,
+			narrow.overflow <= 1 && narrow.emailFits,
+			`overflow ${narrow.overflow}px`,
+		);
+	}
+
 	await mPage.close();
 } finally {
 	await browser.close();

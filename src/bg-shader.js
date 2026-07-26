@@ -1,22 +1,34 @@
 /**
- * Liquid Chrome SDF background — raw WebGL2, zero dependencies.
+ * Braid background — raw WebGL2, zero dependencies.
  *
- * Renders a fullscreen triangle and raymarches smooth-union metaballs in the
- * fragment shader. Visually identical to the previous Three.js implementation
- * at ~1/80th the payload.
+ * Renders a fullscreen triangle and draws six interwoven glowing strands in the
+ * fragment shader. Each strand's depth comes from the quadrature of its own
+ * phase, so strands genuinely pass over and under one another.
+ *
+ * Why this and not the old raymarcher: the background sits behind a
+ * backdrop-filter blur, which annihilates high-frequency detail. The previous
+ * shader spent ~68 map() calls per fragment (64 march steps + 4 normal taps) on
+ * specular and fresnel detail that the blur then deleted, and the only thing
+ * that survived was a full-spectrum hue cycle producing greens and olives that
+ * appear nowhere in the brand palette.
+ *
+ * This is built for what survives a blur instead: large low-frequency
+ * structure, the cyan -> indigo -> violet ramp taken straight from the design
+ * tokens, low luminance and high chroma. It needs no marching and no noise, so
+ * it is roughly an order of magnitude less arithmetic per fragment — which is
+ * what pays for rendering at full resolution.
  *
  * Perf guards:
- *   - device pixel ratio capped (see DPR_CAP) — this is a blurred backdrop,
- *     it does not need to be retina-sharp
- *   - internal resolution scaled by RENDER_SCALE
- *   - framerate capped to TARGET_FPS (motion is deliberately slow)
+ *   - device pixel ratio capped (DPR_CAP)
+ *   - framerate capped to TARGET_FPS (the drift is slow; the strands are soft
+ *     glows with no hard edges, so 30 is indistinguishable from 60 here)
  *   - fully paused while the tab is hidden
  *   - honours prefers-reduced-motion by drawing a single static frame
  *   - recovers from GPU context loss
  */
 
-const DPR_CAP = 1.5;
-const RENDER_SCALE = 0.75;
+const DPR_CAP = 2.0;
+const RENDER_SCALE = 1.0;
 const TARGET_FPS = 30;
 const FRAME_BUDGET = 1000 / TARGET_FPS;
 
@@ -40,111 +52,56 @@ uniform vec2  uMouse;
 
 out vec4 fragColor;
 
-#define MAX_STEPS 64
-#define SURF_DIST 0.003
-#define MAX_DIST  15.0
+#define STRANDS 6
 
-float sdSmoothUnion(float d1, float d2, float k) {
-  float h = clamp(0.5 + 0.5 * (d2 - d1) / k, 0.0, 1.0);
-  return mix(d2, d1, h) - k * h * (1.0 - h);
-}
+// Brand palette, straight from the CSS design tokens.
+const vec3 C_CYAN   = vec3(0.220, 0.741, 0.973); // #38bdf8
+const vec3 C_INDIGO = vec3(0.506, 0.549, 0.973); // #818cf8
+const vec3 C_VIOLET = vec3(0.753, 0.518, 0.988); // #c084fc
+const vec3 C_BASE   = vec3(0.016, 0.020, 0.028);
 
-float sdSphere(vec3 p, float r) {
-  return length(p) - r;
-}
-
-float map(vec3 p) {
-  float t = uTime * 0.5;
-
-  // Primary fluid core metaballs revolving around the origin
-  vec3 p1 = p - vec3(sin(t * 0.7) * 0.75, cos(t * 0.5) * 0.5, sin(t * 0.3) * 0.3);
-  float d1 = sdSphere(p1, 0.85);
-
-  vec3 p2 = p - vec3(cos(t * 0.8 + 1.5) * 0.95, sin(t * 0.6 + 0.5) * 0.7, cos(t * 0.4) * 0.4);
-  float d2 = sdSphere(p2, 0.65);
-
-  vec3 p3 = p - vec3(sin(t * 0.5 + 3.0) * 0.85, cos(t * 0.9 + 2.0) * 0.65, sin(t * 0.7 + 1.0) * 0.5);
-  float d3 = sdSphere(p3, 0.55);
-
-  // Interactive mouse influence metaball
-  vec3 pMouse = p - vec3(uMouse.x * 2.2, uMouse.y * 1.4, 0.2);
-  float dMouse = sdSphere(pMouse, 0.55);
-
-  // Organic smooth union
-  float d = sdSmoothUnion(d1, d2, 0.55);
-  d = sdSmoothUnion(d, d3, 0.5);
-  d = sdSmoothUnion(d, dMouse, 0.6);
-
-  // Surface ripple
-  d += sin(p.x * 3.5 + t * 2.0) * cos(p.y * 3.5 + t * 1.5) * sin(p.z * 3.5 + t) * 0.035;
-
-  return d;
-}
-
-/* Forward-difference normal: 4 map() calls instead of the 6 a central
-   difference needs. Indistinguishable once the frosted layer lands on top. */
-vec3 calcNormal(vec3 p) {
-  const vec2 e = vec2(0.0025, 0.0);
-  float d = map(p);
-  return normalize(vec3(
-    map(p + e.xyy) - d,
-    map(p + e.yxy) - d,
-    map(p + e.yyx) - d
-  ));
+vec3 brandRamp(float t) {
+  t = clamp(t, 0.0, 1.0);
+  return t < 0.5
+    ? mix(C_CYAN, C_INDIGO, t * 2.0)
+    : mix(C_INDIGO, C_VIOLET, (t - 0.5) * 2.0);
 }
 
 void main() {
-  vec2 st = (gl_FragCoord.xy - 0.5 * uResolution.xy) / min(uResolution.x, uResolution.y);
+  vec2 uv = (gl_FragCoord.xy - 0.5 * uResolution.xy) / min(uResolution.x, uResolution.y);
 
-  vec3 ro = vec3(0.0, 0.0, 3.2);
-  vec3 rd = normalize(vec3(st, -1.4));
+  // Gentle rotation stops the weave reading as a flat audio equaliser.
+  const float a = 0.20;
+  uv = mat2(cos(a), -sin(a), sin(a), cos(a)) * uv;
 
-  float dO = 0.0;
-  float dS = 0.0;
-  vec3 p = ro;
+  float t = uTime * 0.11;
+  vec3 col = C_BASE;
 
-  for (int i = 0; i < MAX_STEPS; i++) {
-    p = ro + rd * dO;
-    dS = map(p);
-    dO += dS;
-    if (dS < SURF_DIST || dO > MAX_DIST) break;
+  for (int i = 0; i < STRANDS; i++) {
+    float fi = float(i) / float(STRANDS - 1);
+    float phase = fi * 6.2831853;
+    float arg = uv.x * 2.3 + phase + t * 1.5;
+
+    // Centre line, plus a small static offset so the weave has width.
+    float y = sin(arg) * 0.30 + (fi - 0.5) * 0.14;
+
+    // Quadrature of the same phase = depth. The strand is in front when z > 0,
+    // which is what makes the strands appear to interleave rather than merely
+    // overlap.
+    float z = cos(arg);
+
+    float d = abs(uv.y - y);
+    float w = 0.028 + 0.013 * z;         // thicker when nearer
+    float glow = pow(w / (d + w), 2.6);
+    float bright = 0.5 + 0.5 * z;        // dimmer when behind
+
+    col += brandRamp(fi * 0.85 + 0.07) * glow * bright * 0.6;
   }
 
-  // Ambient obsidian glow background
-  vec3 col = mix(vec3(0.02, 0.03, 0.05), vec3(0.06, 0.08, 0.12), length(st) * 0.8);
+  // The pointer adds a soft bloom rather than dragging an object around.
+  col += brandRamp(0.5) * 0.07 * exp(-6.0 * length(uv - uMouse * vec2(1.1, 0.7)));
 
-  if (dS < SURF_DIST) {
-    vec3 n = calcNormal(p);
-    vec3 viewDir = -rd;
-
-    vec3 lightDir1 = normalize(vec3(2.5, 3.0, 3.0) - p);
-    vec3 lightDir2 = normalize(vec3(-2.5, -2.0, 2.0) - p);
-
-    float diff1 = max(dot(n, lightDir1), 0.0);
-    float diff2 = max(dot(n, lightDir2), 0.0);
-
-    float spec1 = pow(max(dot(viewDir, reflect(-lightDir1, n)), 0.0), 32.0);
-    float spec2 = pow(max(dot(viewDir, reflect(-lightDir2, n)), 0.0), 16.0);
-
-    float fresnel = pow(1.0 - max(dot(viewDir, n), 0.0), 3.0);
-
-    // Chromatic dispersion (RGB spectral shift)
-    vec3 chromatic = vec3(
-      dot(n, vec3(0.3, 0.6, 0.8)),
-      dot(n, vec3(0.5, 0.7, 0.4)),
-      dot(n, vec3(0.8, 0.4, 0.9))
-    );
-    chromatic = 0.5 + 0.5 * sin(chromatic * 4.0 + uTime * 0.5);
-
-    vec3 baseChrome = vec3(0.85, 0.90, 0.95);
-    vec3 matColor = mix(baseChrome, chromatic, 0.35);
-    vec3 specColor = vec3(1.0) * spec1 + vec3(0.7, 0.85, 1.0) * spec2;
-
-    col = matColor * (diff1 * 0.6 + diff2 * 0.3 + 0.25) + specColor * 0.8 + fresnel * chromatic * 0.6;
-    col = mix(col, vec3(0.03, 0.04, 0.06), smoothstep(2.0, 4.5, dO));
-  }
-
-  col *= 1.0 - 0.3 * length(st);
+  col *= 1.0 - 0.34 * length(uv);
   fragColor = vec4(col, 1.0);
 }`;
 
@@ -182,7 +139,7 @@ export class WebGLBackground {
 		this.tick = this.tick.bind(this);
 
 		if (!this.initGL()) {
-			// No WebGL2 — the CSS gradient on <body> is the fallback. Hide the canvas.
+			// No WebGL2 — the CSS background colour is the fallback. Hide the canvas.
 			this.canvas.style.display = 'none';
 			return;
 		}
@@ -197,7 +154,7 @@ export class WebGLBackground {
 	initGL() {
 		const gl = this.canvas.getContext('webgl2', {
 			alpha: false,
-			antialias: false, // pointless for a raymarched fullscreen pass
+			antialias: false, // pointless for a fullscreen procedural pass
 			depth: false,
 			stencil: false,
 			powerPreference: 'low-power',
@@ -281,7 +238,7 @@ export class WebGLBackground {
 		this.targetMouse.x = (e.clientX / window.innerWidth) * 2 - 1;
 		this.targetMouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
 		// A reduced-motion visitor gets no drifting animation, but the pointer
-		// metaball is direct manipulation, so it stays responsive.
+		// bloom is direct manipulation, so it stays responsive.
 		if (!this.running && this.motionQuery.matches) this.scheduleStaticFrame();
 	}
 
@@ -341,7 +298,7 @@ export class WebGLBackground {
 		// Fixed, pleasant-looking pose. No time advance, so nothing moves.
 		this.mouse.x = this.targetMouse.x;
 		this.mouse.y = this.targetMouse.y;
-		this.draw(2.4);
+		this.draw(6.0);
 	}
 
 	tick(now) {

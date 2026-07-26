@@ -153,13 +153,19 @@ body {
 	   16px blur, so sharpness is wasted GPU time. */
 }
 
+/* Blur and vignette are deliberately lighter than they used to be. At
+   blur(16px) with the vignette clearing only 25%, the shader was almost
+   entirely hidden — and the clear window was narrower than the hero card, so
+   the one unvignetted region was the region the card covered. Text contrast is
+   unaffected because every content panel carries its own backdrop-filter and
+   semi-opaque background. */
 .frosted-backdrop {
 	position: fixed;
 	inset: 0;
 	z-index: 1;
-	backdrop-filter: blur(16px) saturate(130%);
-	-webkit-backdrop-filter: blur(16px) saturate(130%);
-	background: rgba(5, 6, 8, 0.35);
+	backdrop-filter: blur(11px) saturate(135%);
+	-webkit-backdrop-filter: blur(11px) saturate(135%);
+	background: rgba(5, 6, 8, 0.26);
 	pointer-events: none;
 }
 
@@ -167,7 +173,7 @@ body {
 	position: fixed;
 	inset: 0;
 	z-index: 2;
-	background: radial-gradient(circle at center, transparent 25%, rgba(5, 6, 8, 0.85) 100%);
+	background: radial-gradient(circle at center, transparent 40%, rgba(5, 6, 8, 0.85) 100%);
 	pointer-events: none;
 }
 

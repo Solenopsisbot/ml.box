@@ -80,10 +80,12 @@ try {
 		};
 	});
 	check('WebGL2 context present', webgl.ok, webgl.why ?? webgl.vendor);
+	// DPR_CAP 2.0 x RENDER_SCALE 1.0, and this page runs at deviceScaleFactor 2,
+	// so the cap is not binding here and the buffer should be exactly 2x CSS.
 	check(
-		'canvas renders below CSS resolution (DPR/scale caps active)',
-		webgl.ok && webgl.w < webgl.cssW * 2,
-		webgl.ok ? `${webgl.w}px buffer for ${webgl.cssW}px css` : '',
+		'canvas buffer matches configured render scale',
+		webgl.ok && Math.abs(webgl.w - webgl.cssW * 2) <= 2,
+		webgl.ok ? `${webgl.w}px buffer for ${webgl.cssW}px css (expected ${webgl.cssW * 2})` : '',
 	);
 
 	// Sample the canvas. This must draw and read back inside a single task:
@@ -241,6 +243,18 @@ try {
 		() => document.documentElement.scrollWidth <= window.innerWidth + 1,
 	);
 	check('no horizontal overflow at 390px', overflow);
+
+	// This viewport is deviceScaleFactor 3, so DPR_CAP 2.0 must actually bind:
+	// an uncapped buffer would be 3x the CSS width.
+	const capped = await mPage.evaluate(() => {
+		const c = document.getElementById('webgl-canvas');
+		return { w: c.width, cssW: c.clientWidth, dpr: window.devicePixelRatio };
+	});
+	check(
+		'DPR cap clamps the buffer below device pixel ratio',
+		capped.w <= capped.cssW * 2 + 2 && capped.dpr > 2,
+		`dpr ${capped.dpr}, ${capped.w}px buffer for ${capped.cssW}px css (uncapped would be ${capped.cssW * capped.dpr})`,
+	);
 
 	await mPage.screenshot({ path: join(OUT, 'hero-mobile.png') });
 

@@ -20,7 +20,8 @@ contract for anyone (human or agent) touching this codebase.
 
 The background used to be a Three.js `ShaderMaterial` on a `PlaneGeometry`.
 That shipped **117 KB gzipped of 3D engine to draw a single rectangle**. It is
-now ~40 lines of raw WebGL2 in [src/bg-shader.js](src/bg-shader.js).
+now raw WebGL2 in [src/bg-shader.js](src/bg-shader.js), drawing a single
+fullscreen triangle.
 
 | | before | after |
 |---|---|---|
@@ -62,7 +63,7 @@ ml.box/
 └── src/
     ├── style.css                 # @font-face, tokens, layout, components
     ├── main.js                   # entrypoint
-    └── bg-shader.js              # raw WebGL2 SDF raymarcher
+    └── bg-shader.js              # raw WebGL2 braid shader
 ```
 
 ---
@@ -174,32 +175,60 @@ Pushing to `main` on `Solenopsisbot/ml.box` also auto-deploys.
 
 ---
 
-## 5. Performance Budget
+## 5. The background shader
 
-The background is decoration sitting behind `backdrop-filter: blur(16px)` and a
-vignette. It must never cost real money in battery. Current guards in
-`src/bg-shader.js`:
+`src/bg-shader.js` draws six interwoven glowing strands. Each strand takes its
+depth from the **quadrature** of its own phase (`sin` for the centre line,
+`cos` for depth), which is what makes the strands genuinely interleave rather
+than merely overlap. Thematically deliberate: the maintainer's architecture
+project is called Braid.
 
-- `DPR_CAP = 1.5` and `RENDER_SCALE = 0.75` — renders well under CSS resolution.
-  Invisible through a 16px blur.
-- `TARGET_FPS = 30` — the motion is deliberately slow; 120 fps is waste.
+### Design constraint: it lives behind a blur
+
+Anything high-frequency is destroyed by `backdrop-filter`. The previous version
+was an SDF raymarcher spending ~68 `map()` calls per fragment (64 march steps +
+4 normal taps) on specular, fresnel and metaball topology — all of which the
+blur deleted. What survived was a full-spectrum hue cycle
+(`0.5 + 0.5*sin(chromatic*4.0 + uTime*0.5)`) that produced **greens and olives
+appearing nowhere in the brand palette**. That was the source of the "weird"
+look.
+
+So: build large, low-frequency structure in the cyan -> indigo -> violet ramp,
+keep luminance low and chroma high. The palette constants in the shader mirror
+the CSS design tokens — keep them in sync.
+
+The braid needs no marching and no noise: six iterations of `sin`/`cos`. That is
+roughly an order of magnitude less arithmetic per fragment than the raymarcher,
+which is what pays for rendering at full resolution.
+
+### Current guards
+
+- `DPR_CAP = 2.0`, `RENDER_SCALE = 1.0` — full resolution, affordable only
+  because the shader is cheap. If you make the shader more expensive, lower
+  these before anything else.
+- `TARGET_FPS = 30` — the drift is slow and the strands are soft glows with no
+  hard edges, so 30 is indistinguishable from 60 here.
 - Fully paused on `visibilitychange`. A backgrounded tab does zero GPU work.
-- `MAX_STEPS 64`, and `calcNormal` uses a **forward** difference (4 `map()`
-  calls) instead of a central one (6).
 - `powerPreference: 'low-power'`, `antialias: false`, `depth: false`.
 - Recovers from `webglcontextlost`.
+- `prefers-reduced-motion` draws a single static frame and never starts the RAF
+  loop. The pointer bloom stays responsive because that is direct manipulation.
 
-If you touch the shader, keep the budget. Raising `MAX_STEPS` or the resolution
-scale buys nothing visible and costs battery on every phone that loads the page.
+`scripts/smoke.mjs` asserts the buffer matches `RENDER_SCALE` at
+deviceScaleFactor 2 **and** that `DPR_CAP` actually binds at deviceScaleFactor 3.
+Change the constants and those two checks must be updated together.
 
-### Known cosmetic note
+### Blur and vignette are tuned to the shader
 
-`.vignette` is `transparent 25%`, which on a 1440x900 viewport is a ~424px-wide
-clear window — and `.hero-card` is 440px wide. The card therefore covers
-essentially the only unvignetted part of the shader. This is intentional
-(ambient light, not a focal point), but it means shader detail work has almost
-no visible payoff. Adjust the vignette first if you want the background to read
-more strongly.
+`.frosted-backdrop` is `blur(11px)` and `.vignette` clears `40%`. These were
+previously `blur(16px)` and `25%`, which hid the background almost entirely —
+and since a 25% clear window is ~424px wide on a 1440x900 viewport while
+`.hero-card` is 440px, the single unvignetted region was exactly the region the
+card covered.
+
+Text contrast does not depend on the vignette: every content panel carries its
+own `backdrop-filter` and semi-opaque background. If you make the shader
+brighter, keep luminance low rather than compensating with the vignette.
 
 ---
 

@@ -201,6 +201,11 @@ body {
 	scroll-margin-top: 2rem;
 }
 
+/* Breathing room at the end of the document now that there is no footer. */
+.app-container > .section:last-child {
+	padding-bottom: clamp(4rem, 12vw, 7rem);
+}
+
 /* ==========================================================================
    Hero card — intentionally static. No parallax, no tilt. See AGENTS.md.
    ========================================================================== */
@@ -729,33 +734,6 @@ a.contact-row:hover {
 .copy-btn.is-copied {
 	color: #7dd3fc;
 	border-color: rgba(125, 211, 252, 0.45);
-}
-
-/* ==========================================================================
-   Footer
-   ========================================================================== */
-
-.site-footer {
-	width: 100%;
-	max-width: calc(var(--content-max) + var(--gutter) * 2);
-	margin-inline: auto;
-	padding: 1.5rem var(--gutter) clamp(2rem, 6vw, 3rem);
-	border-top: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.footer-text {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 0.45rem;
-	font-family: var(--font-mono);
-	font-size: 0.7rem;
-	color: var(--text-dim);
-	letter-spacing: 0.03em;
-}
-
-.footer-domain {
-	color: var(--text-muted);
-	font-weight: 600;
 }
 
 /* ==========================================================================

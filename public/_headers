@@ -1,0 +1,43 @@
+# Cloudflare Pages response headers.
+# Lives in public/ so Vite copies it to the dist root, where Pages reads it.
+
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Cross-Origin-Opener-Policy: same-origin
+  Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=(), usb=(), interest-cohort=()
+  Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; object-src 'none'; upgrade-insecure-requests
+
+# Vite content-hashes everything under /assets/, so these can never go stale.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Fonts are served from stable paths, so treat the filenames as immutable
+# contracts: to ship a different font, add a NEW filename. Never overwrite one
+# of these in place or clients will hold the old bytes for a year.
+/fonts/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Branding rasters change occasionally; keep them refreshable.
+/og.png
+  Cache-Control: public, max-age=604800
+/favicon.svg
+  Cache-Control: public, max-age=604800
+/favicon-32.png
+  Cache-Control: public, max-age=604800
+/apple-touch-icon.png
+  Cache-Control: public, max-age=604800
+/icon-192.png
+  Cache-Control: public, max-age=604800
+/icon-512.png
+  Cache-Control: public, max-age=604800
+/solenopsisbot.webp
+  Cache-Control: public, max-age=604800
+
+# Always revalidate the document so a deploy is visible immediately.
+/
+  Cache-Control: public, max-age=0, must-revalidate
+/index.html
+  Cache-Control: public, max-age=0, must-revalidate

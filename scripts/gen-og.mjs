@@ -26,7 +26,7 @@ const FONT_DIR = join(ROOT, '.cache', 'fonts-ttf');
    Edit these two lines when the branding copy changes, then `npm run og`. */
 const WORDMARK = 'ml.box';
 const EYEBROW = 'SOLENOPSISBOT';
-const TAGLINE = 'Developer & researcher — machine learning, systems, and the web.';
+const TAGLINE = 'Building Braid — a custom LLM architecture designed to outperform the transformer.';
 /* -------------------------------------------------------------------------- */
 
 const BRAND = {

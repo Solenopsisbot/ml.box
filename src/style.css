@@ -69,6 +69,12 @@
 
 	/* Single source of truth for the hero's vertical rhythm. */
 	--hero-min-height: 100svh;
+
+	/* Readable measure for prose sections below the hero. Wider than the
+	   440px hero card on purpose: the card is a focal object, these are
+	   content. */
+	--content-max: 560px;
+	--gutter: 1.5rem;
 }
 
 *,
@@ -176,12 +182,23 @@ body {
 }
 
 .hero {
+	position: relative;
 	min-height: 100vh;
 	min-height: var(--hero-min-height);
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	padding: clamp(1.25rem, 4vw, 2.5rem) 1.5rem;
+	padding: clamp(1.25rem, 4vw, 2.5rem) var(--gutter);
+}
+
+/* Content sections. Add another <section class="section"> and it flows below
+   with correct measure and rhythm automatically. */
+.section {
+	width: 100%;
+	max-width: calc(var(--content-max) + var(--gutter) * 2);
+	margin-inline: auto;
+	padding: clamp(2.5rem, 7vw, 4rem) var(--gutter);
+	scroll-margin-top: 2rem;
 }
 
 /* ==========================================================================
@@ -454,6 +471,294 @@ body {
 }
 
 /* ==========================================================================
+   Scroll cue
+   The hero is a full viewport, so without this the sections below are
+   effectively undiscoverable. JS adds .is-scrolled to hide it once moving.
+   ========================================================================== */
+
+.scroll-cue {
+	position: absolute;
+	bottom: clamp(1rem, 3vh, 2rem);
+	left: 50%;
+	translate: -50% 0;
+	display: inline-flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 0.15rem;
+	color: var(--text-dim);
+	text-decoration: none;
+	opacity: 1;
+	transition:
+		opacity 0.4s ease,
+		color 0.25s ease;
+}
+
+.scroll-cue:hover {
+	color: var(--text-muted);
+}
+
+.scroll-cue-text {
+	font-family: var(--font-mono);
+	font-size: 0.62rem;
+	font-weight: 600;
+	letter-spacing: 0.18em;
+	text-transform: uppercase;
+}
+
+.scroll-cue svg {
+	animation: cue-bob 2.4s ease-in-out infinite;
+}
+
+.is-scrolled .scroll-cue {
+	opacity: 0;
+	pointer-events: none;
+}
+
+@keyframes cue-bob {
+	0%,
+	100% {
+		transform: translateY(0);
+	}
+	50% {
+		transform: translateY(3px);
+	}
+}
+
+/* ==========================================================================
+   Section typography
+   ========================================================================== */
+
+.section-eyebrow {
+	font-family: var(--font-mono);
+	font-size: 0.65rem;
+	font-weight: 700;
+	color: var(--text-dim);
+	letter-spacing: 0.14em;
+	text-transform: uppercase;
+	margin-bottom: 0.5rem;
+}
+
+.section-title {
+	font-size: clamp(1.35rem, 4.5vw, 1.6rem);
+	font-weight: 700;
+	letter-spacing: -0.015em;
+	line-height: 1.2;
+	color: var(--text-main);
+	margin-bottom: 1.25rem;
+}
+
+/* ==========================================================================
+   Glass panel (Now)
+   ========================================================================== */
+
+.panel {
+	position: relative;
+	background: rgba(12, 15, 23, 0.62);
+	backdrop-filter: blur(20px) saturate(150%);
+	-webkit-backdrop-filter: blur(20px) saturate(150%);
+	border: 1px solid var(--card-border);
+	border-radius: var(--radius-md);
+	padding: 1.25rem 1.35rem 1.25rem 1.6rem;
+	overflow: hidden;
+	box-shadow: 0 18px 40px -18px rgba(0, 0, 0, 0.7);
+}
+
+.panel-accent {
+	position: absolute;
+	top: 0;
+	left: 0;
+	bottom: 0;
+	width: 3px;
+	background: linear-gradient(to bottom, #38bdf8, #818cf8 55%, #c084fc);
+}
+
+.panel-text {
+	font-size: 0.95rem;
+	line-height: 1.65;
+	color: #e2e8f0;
+}
+
+/* ==========================================================================
+   Projects
+   ========================================================================== */
+
+.project-list {
+	list-style: none;
+	display: grid;
+	gap: 0.7rem;
+}
+
+.project {
+	display: flex;
+	flex-direction: column;
+	gap: 0.3rem;
+	background: rgba(12, 15, 23, 0.55);
+	backdrop-filter: blur(20px) saturate(150%);
+	-webkit-backdrop-filter: blur(20px) saturate(150%);
+	border: 1px solid var(--card-border);
+	border-radius: var(--radius-md);
+	padding: 1.05rem 1.25rem;
+	text-decoration: none;
+	color: inherit;
+	transition:
+		background-color 0.25s ease,
+		border-color 0.25s ease,
+		transform 0.25s ease,
+		box-shadow 0.25s ease;
+}
+
+.project:hover {
+	background: rgba(255, 255, 255, 0.07);
+	border-color: var(--card-border-hover);
+	transform: translateY(-2px);
+	box-shadow: 0 14px 30px -12px rgba(0, 0, 0, 0.6);
+}
+
+.project-head {
+	display: flex;
+	align-items: center;
+	gap: 0.4rem;
+}
+
+.project-name {
+	font-family: var(--font-mono);
+	font-size: 0.92rem;
+	font-weight: 600;
+	color: var(--text-main);
+	letter-spacing: -0.01em;
+}
+
+.project-arrow {
+	flex-shrink: 0;
+	color: var(--text-dim);
+	transition:
+		transform 0.25s ease,
+		color 0.25s ease;
+}
+
+.project:hover .project-arrow {
+	color: var(--text-main);
+	transform: translate(2px, -2px);
+}
+
+.project-desc {
+	font-size: 0.88rem;
+	line-height: 1.55;
+	color: var(--text-muted);
+}
+
+/* ==========================================================================
+   Contact
+   ========================================================================== */
+
+.contact-list {
+	list-style: none;
+	display: grid;
+	gap: 0.6rem;
+}
+
+.contact-row {
+	display: flex;
+	align-items: center;
+	gap: 0.7rem;
+	background: rgba(12, 15, 23, 0.55);
+	backdrop-filter: blur(20px) saturate(150%);
+	-webkit-backdrop-filter: blur(20px) saturate(150%);
+	border: 1px solid var(--card-border);
+	border-radius: var(--radius-md);
+	padding: 0.8rem 1.1rem;
+	text-decoration: none;
+	color: var(--text-main);
+	font-size: 0.9rem;
+	font-weight: 600;
+	transition:
+		background-color 0.25s ease,
+		border-color 0.25s ease;
+}
+
+a.contact-row:hover {
+	background: rgba(255, 255, 255, 0.07);
+	border-color: var(--card-border-hover);
+}
+
+.contact-icon {
+	flex-shrink: 0;
+	color: var(--text-muted);
+}
+
+.contact-label {
+	flex-shrink: 0;
+}
+
+.contact-value {
+	margin-left: auto;
+	font-family: var(--font-mono);
+	font-size: 0.78rem;
+	font-weight: 500;
+	color: var(--text-muted);
+	overflow-wrap: anywhere;
+	text-align: right;
+}
+
+.copy-btn {
+	flex-shrink: 0;
+	margin-left: 0.15rem;
+	font-family: var(--font-mono);
+	font-size: 0.68rem;
+	font-weight: 600;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--text-muted);
+	background: rgba(255, 255, 255, 0.05);
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	border-radius: var(--radius-sm);
+	padding: 0.3rem 0.55rem;
+	cursor: pointer;
+	transition:
+		background-color 0.2s ease,
+		border-color 0.2s ease,
+		color 0.2s ease;
+}
+
+.copy-btn:hover {
+	background: rgba(255, 255, 255, 0.12);
+	border-color: rgba(255, 255, 255, 0.3);
+	color: var(--text-main);
+}
+
+.copy-btn.is-copied {
+	color: #7dd3fc;
+	border-color: rgba(125, 211, 252, 0.45);
+}
+
+/* ==========================================================================
+   Footer
+   ========================================================================== */
+
+.site-footer {
+	width: 100%;
+	max-width: calc(var(--content-max) + var(--gutter) * 2);
+	margin-inline: auto;
+	padding: 1.5rem var(--gutter) clamp(2rem, 6vw, 3rem);
+	border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.footer-text {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.45rem;
+	font-family: var(--font-mono);
+	font-size: 0.7rem;
+	color: var(--text-dim);
+	letter-spacing: 0.03em;
+}
+
+.footer-domain {
+	color: var(--text-muted);
+	font-weight: 600;
+}
+
+/* ==========================================================================
    Responsive
    ========================================================================== */
 
@@ -464,6 +769,31 @@ body {
 
 	.btn-meta {
 		display: none;
+	}
+
+	/* Long values (the email) get their own line rather than squeezing the
+	   label into a 2px column. The label grows to fill line one, which pushes
+	   the value onto line two where the copy button can sit beside it — the
+	   alternative put COPY on a third line and made the row visibly taller
+	   than its neighbour. */
+	.contact-row {
+		flex-wrap: wrap;
+		row-gap: 0.4rem;
+	}
+
+	.contact-label {
+		flex: 1 1 auto;
+	}
+
+	.contact-value {
+		flex: 1 1 auto;
+		margin-left: 0;
+		text-align: left;
+		padding-left: calc(18px + 0.7rem);
+	}
+
+	.copy-btn {
+		margin-left: auto;
 	}
 }
 
@@ -487,7 +817,16 @@ body {
 
 	.avatar-frame:hover .avatar-img,
 	.tag:hover,
-	.link-btn:hover {
+	.link-btn:hover,
+	.project:hover {
 		transform: none;
+	}
+
+	.project:hover .project-arrow {
+		transform: none;
+	}
+
+	.scroll-cue svg {
+		animation: none;
 	}
 }

@@ -7,7 +7,7 @@
   <meta name="theme-color" content="#050608">
 
   <title>solenopsisbot — ml.box</title>
-  <meta name="description" content="Developer and researcher. Interested in computers, programming, AI/ML, and anime.">
+  <meta name="description" content="Developer and researcher building Braid, a custom LLM architecture designed to outperform transformers. Also: social AI, finetuning, and RL.">
   <link rel="canonical" href="https://ml.box/">
 
   <!-- OpenGraph. Absolute URLs are mandatory: Discord, X and Slack all reject
@@ -17,7 +17,7 @@
   <meta property="og:site_name" content="ml.box">
   <meta property="og:url" content="https://ml.box/">
   <meta property="og:title" content="solenopsisbot — ml.box">
-  <meta property="og:description" content="Developer and researcher. Interested in computers, programming, AI/ML, and anime.">
+  <meta property="og:description" content="Developer and researcher building Braid, a custom LLM architecture designed to outperform transformers. Also: social AI, finetuning, and RL.">
   <meta property="og:image" content="https://ml.box/og.png">
   <meta property="og:image:type" content="image/png">
   <meta property="og:image:width" content="1200">
@@ -26,7 +26,7 @@
 
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="solenopsisbot — ml.box">
-  <meta name="twitter:description" content="Developer and researcher. Interested in computers, programming, AI/ML, and anime.">
+  <meta name="twitter:description" content="Developer and researcher building Braid, a custom LLM architecture designed to outperform transformers.">
   <meta name="twitter:image" content="https://ml.box/og.png">
   <meta name="twitter:image:alt" content="ml.box — the isometric AI box logo beside the ml.box wordmark.">
 
@@ -49,9 +49,20 @@
     "url": "https://ml.box/",
     "image": "https://ml.box/solenopsisbot.webp",
     "jobTitle": "Developer & Researcher",
-    "description": "Developer and researcher. Interested in computers, programming, AI/ML, and anime.",
+    "description": "Developer and researcher building Braid, a custom LLM architecture designed to outperform transformers.",
+    "email": "mailto:solenopsisbot@gmail.com",
     "sameAs": ["https://github.com/Solenopsisbot"],
-    "knowsAbout": ["Machine Learning", "Neural Architectures", "Social AI"]
+    "knowsAbout": [
+      "Custom Architectures",
+      "Social AI",
+      "Finetuning",
+      "Reinforcement Learning"
+    ],
+    "worksFor": {
+      "@type": "Organization",
+      "name": "Solexsis",
+      "url": "https://solexsis.com"
+    }
   }
   </script>
 </head>
@@ -59,7 +70,7 @@
   <a class="skip-link" href="#main">Skip to content</a>
 
   <!-- Ambient background stack. All three layers are position:fixed, so they
-       stay put as the page grows past one screen. -->
+       stay put as the page scrolls past the hero. -->
   <canvas id="webgl-canvas" aria-hidden="true"></canvas>
   <div class="frosted-backdrop" aria-hidden="true"></div>
   <div class="vignette" aria-hidden="true"></div>
@@ -67,9 +78,7 @@
   <main id="main" class="app-container">
 
     <!-- HERO -----------------------------------------------------------------
-         The card is deliberately static: no parallax, no tilt. See AGENTS.md.
-         Additional <section> elements can be appended after .hero and will
-         simply flow below it — the page scrolls normally now. -->
+         The card is deliberately static: no parallax, no tilt. See AGENTS.md. -->
     <section class="hero">
       <article class="hero-card">
 
@@ -102,17 +111,19 @@
         <div class="bio-section">
           <div class="bio-accent-bar" aria-hidden="true"></div>
           <p class="bio-text">
-            Developer and researcher. Interested in computers, programming, AI/ML, and anime.
+            Developer and researcher focused on custom LLM architectures.
+            Currently building Braid at Solexsis. Also: computers, programming,
+            and anime.
           </p>
         </div>
 
         <section class="tags-section" aria-labelledby="focus-heading">
           <h2 id="focus-heading" class="section-heading">Research &amp; Focus</h2>
           <ul class="tags-cloud">
-            <li class="tag">Machine Learning</li>
-            <li class="tag">Neural Architectures</li>
-            <li class="tag">Technology</li>
+            <li class="tag">Custom Architectures</li>
             <li class="tag">Social AI</li>
+            <li class="tag">Finetuning</li>
+            <li class="tag">RL</li>
           </ul>
         </section>
 
@@ -132,7 +143,108 @@
         </footer>
 
       </article>
+
+      <!-- There is a full viewport of content below, and the hero fills the
+           screen, so the cue is load-bearing rather than decorative. -->
+      <a class="scroll-cue" href="#now" aria-label="Scroll to content">
+        <span class="scroll-cue-text">scroll</span>
+        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M6 9l6 6 6-6"></path>
+        </svg>
+      </a>
     </section>
+
+    <!-- NOW ----------------------------------------------------------------- -->
+    <section class="section" id="now" aria-labelledby="now-title">
+      <p class="section-eyebrow">Now</p>
+      <h2 class="section-title" id="now-title">Building Braid</h2>
+      <div class="panel">
+        <div class="panel-accent" aria-hidden="true"></div>
+        <p class="panel-text">
+          Braid is a custom LLM architecture designed to be significantly more
+          performant than a transformer. It's the main thing I'm working on.
+        </p>
+      </div>
+    </section>
+
+    <!-- PROJECTS ------------------------------------------------------------ -->
+    <section class="section" id="projects" aria-labelledby="projects-title">
+      <p class="section-eyebrow">Projects</p>
+      <h2 class="section-title" id="projects-title">What I'm building</h2>
+
+      <ul class="project-list">
+        <li>
+          <a class="project" href="https://logfare.ai" target="_blank" rel="noopener noreferrer">
+            <span class="project-head">
+              <span class="project-name">logfare.ai</span>
+              <svg class="project-arrow" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M7 17L17 7"></path>
+                <path d="M7 7h10v10"></path>
+              </svg>
+            </span>
+            <span class="project-desc">Free LLM inference in exchange for logs.</span>
+          </a>
+        </li>
+        <li>
+          <a class="project" href="https://solexsis.com" target="_blank" rel="noopener noreferrer">
+            <span class="project-head">
+              <span class="project-name">solexsis.com</span>
+              <svg class="project-arrow" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M7 17L17 7"></path>
+                <path d="M7 7h10v10"></path>
+              </svg>
+            </span>
+            <span class="project-desc">My AI org, currently developing a custom architecture.</span>
+          </a>
+        </li>
+      </ul>
+    </section>
+
+    <!-- CONTACT ------------------------------------------------------------- -->
+    <section class="section" id="contact" aria-labelledby="contact-title">
+      <p class="section-eyebrow">Contact</p>
+      <h2 class="section-title" id="contact-title">Get in touch</h2>
+
+      <ul class="contact-list">
+        <li>
+          <!-- The @ is an HTML entity: browsers decode it natively so the link,
+               copy-paste and screen readers all behave normally, but the naive
+               regex harvesters that scrape personal domains do not. -->
+          <a class="contact-row" href="mailto:solenopsisbot&#64;gmail.com">
+            <svg class="contact-icon" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+              <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
+            </svg>
+            <span class="contact-label">Email</span>
+            <span class="contact-value">solenopsisbot&#64;gmail.com</span>
+          </a>
+        </li>
+        <li>
+          <!-- Not a link: a Discord username has no addressable profile URL
+               without the numeric user ID, so a copy affordance is the useful
+               thing here. The button stays hidden until JS confirms the
+               clipboard API exists. -->
+          <div class="contact-row is-static">
+            <svg class="contact-icon" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+            <span class="contact-label">Discord</span>
+            <span class="contact-value" id="discord-handle">solenopsisbot</span>
+            <button class="copy-btn" type="button" data-copy="solenopsisbot" hidden>
+              <span class="copy-btn-label">Copy</span>
+            </button>
+          </div>
+        </li>
+      </ul>
+    </section>
+
+    <footer class="site-footer">
+      <p class="footer-text">
+        <span class="footer-domain">ml.box</span>
+        <span class="footer-sep" aria-hidden="true">·</span>
+        <span>hand-written, zero runtime dependencies</span>
+      </p>
+    </footer>
 
   </main>
 

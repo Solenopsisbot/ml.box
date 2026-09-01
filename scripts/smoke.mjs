@@ -6,6 +6,10 @@
  *   - WebGL2 context acquired and the shader program links
  *   - the canvas is drawing non-uniform output (i.e. the raymarch produced an image)
  *   - the document scrolls (regression guard on the old overflow:hidden bug)
+ *   - every project card links out and is described
+ *   - contact rows: mailto, copy buttons, no <button> nested inside an <a>
+ *   - section reveal fails open (nothing is left at opacity 0)
+ *   - 404.html builds, is styled, and is noindex
  *   - reduced-motion path renders without animating
  *   - writes screenshots to .cache/screens/
  *
@@ -195,30 +199,110 @@ try {
 		cue.ok ? `opacity ${cue.before} -> ${cue.after}` : 'cue missing',
 	);
 
-	const copyBtn = await page.evaluate(() => {
-		const b = document.querySelector('.copy-btn[data-copy]');
-		return { present: !!b, revealed: b ? !b.hidden : false, value: b?.dataset.copy };
-	});
+	// Both contact rows now carry one — email and Discord.
+	const copyBtns = await page.evaluate(() =>
+		[...document.querySelectorAll('.copy-btn[data-copy]')].map((b) => ({
+			revealed: !b.hidden,
+			value: b.dataset.copy,
+		})),
+	);
 	check(
-		'clipboard button revealed by progressive enhancement',
-		copyBtn.present && copyBtn.revealed,
-		copyBtn.value,
+		'clipboard buttons revealed by progressive enhancement',
+		copyBtns.length >= 2 && copyBtns.every((b) => b.revealed && b.value),
+		copyBtns.map((b) => b.value).join(', '),
 	);
 
-	// mailto must survive the HTML-entity encoding of the @ sign.
+	// mailto must survive the HTML-entity encoding of the @ sign, and the copy
+	// button must be handing out the same string the link points at.
 	const mailto = await page.evaluate(() => {
 		const a = document.querySelector('a[href^="mailto:"]');
-		return { href: a?.getAttribute('href'), text: a?.querySelector('.contact-value')?.textContent };
+		const btn = a?.closest('.contact-row')?.querySelector('.copy-btn[data-copy]');
+		return { href: a?.getAttribute('href'), text: a?.textContent.trim(), copy: btn?.dataset.copy };
 	});
 	check(
 		'mailto href decodes correctly',
 		/^mailto:[^@\s]+@[^@\s]+\.[a-z]+$/i.test(mailto.href ?? ''),
 		mailto.href,
 	);
+	check(
+		'email link, visible text and copy value all agree',
+		mailto.href === `mailto:${mailto.text}` && mailto.copy === mailto.text,
+		`${mailto.href} / ${mailto.text} / ${mailto.copy}`,
+	);
+
+	// A <button> inside an <a> is invalid HTML and Chrome will not deliver the
+	// click to it. The row uses a stretched ::after instead — this guards the
+	// regression where someone "simplifies" it back into a nested button.
+	const nested = await page.evaluate(
+		() => document.querySelectorAll('a .copy-btn, a button').length,
+	);
+	check('no button nested inside a link', nested === 0, `${nested} found`);
+
+	// Every project card must point somewhere absolute and carry a description.
+	const projects = await page.evaluate(() =>
+		[...document.querySelectorAll('.project')].map((a) => ({
+			href: a.getAttribute('href'),
+			name: a.querySelector('.project-name')?.textContent.trim(),
+			desc: a.querySelector('.project-desc')?.textContent.trim(),
+		})),
+	);
+	check(
+		'every project links out and is described',
+		projects.length >= 3 &&
+			projects.every((p) => /^https:\/\//.test(p.href ?? '') && p.name && p.desc),
+		projects.map((p) => p.name).join(', '),
+	);
+	check(
+		'revel.chat listed',
+		projects.some((p) => p.href === 'https://revel.chat'),
+		projects.map((p) => p.href).join(', '),
+	);
+
+	// The reveal must fail open: a section JS never reached is still readable.
+	const revealed = await page.evaluate(async () => {
+		window.scrollTo({ top: document.body.scrollHeight, behavior: 'instant' });
+		await new Promise((r) => setTimeout(r, 900));
+		const hidden = [...document.querySelectorAll('.app-container > .section')].filter(
+			(el) => +getComputedStyle(el).opacity < 0.99,
+		);
+		window.scrollTo({ top: 0, behavior: 'instant' });
+		return hidden.map((el) => el.id);
+	});
+	check(
+		'all sections fully revealed after scrolling through',
+		revealed.length === 0,
+		revealed.join(', '),
+	);
 
 	await page.screenshot({ path: join(OUT, 'hero.png') });
 	await page.screenshot({ path: join(OUT, 'full.png'), fullPage: true });
 	await page.close();
+
+	/* ------------------------------------------------------------------- 404 */
+	// Declared as a second rollup input; if that wiring breaks, the file simply
+	// is not in dist/ and this 404s for real.
+	const { page: nfPage, errors: nfErrors } = await newPage(browser);
+	const nfResponse = await nfPage.goto(new globalThis.URL('/404.html', URL).href, {
+		waitUntil: 'networkidle0',
+		timeout: 30000,
+	});
+	check('404 page builds and loads cleanly', nfResponse?.ok() && nfErrors.length === 0, nfErrors.join(' | '));
+
+	const nf = await nfPage.evaluate(() => ({
+		hasCard: !!document.querySelector('.error-card'),
+		home: document.querySelector('.link-btn')?.getAttribute('href'),
+		noindex: document.querySelector('meta[name="robots"]')?.content,
+		styled: getComputedStyle(document.body).backgroundColor,
+	}));
+	check(
+		'404 shares the design system and offers a way home',
+		nf.hasCard && nf.home === '/' && nf.styled === 'rgb(5, 6, 8)',
+		`home=${nf.home} bg=${nf.styled}`,
+	);
+	check('404 is noindex', nf.noindex === 'noindex', nf.noindex);
+
+	await nfPage.screenshot({ path: join(OUT, '404.png') });
+	await nfPage.close();
 
 	/* -------------------------------------------------------- reduced motion */
 	const { page: rmPage, errors: rmErrors } = await newPage(browser, { reducedMotion: true });
@@ -265,7 +349,8 @@ try {
 		await mPage.reload({ waitUntil: 'networkidle0' });
 		await new Promise((r) => setTimeout(r, 500));
 		const narrow = await mPage.evaluate(() => {
-			const v = document.querySelector('a[href^="mailto:"] .contact-value');
+			// The anchor *is* the value now — the copy button lives beside it.
+			const v = document.querySelector('a[href^="mailto:"]');
 			return {
 				overflow: document.documentElement.scrollWidth - window.innerWidth,
 				emailFits: v.scrollWidth <= v.clientWidth + 1,

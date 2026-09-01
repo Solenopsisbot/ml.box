@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#050608">
+
+  <title>Not found — ml.box</title>
+  <meta name="description" content="That page does not exist on ml.box.">
+  <!-- Soft-404s are worse than none: tell crawlers not to index this shell. -->
+  <meta name="robots" content="noindex">
+
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+
+  <link rel="preload" href="/fonts/outfit-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/jetbrains-mono-latin.woff2" as="font" type="font/woff2" crossorigin>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <canvas id="webgl-canvas" aria-hidden="true"></canvas>
+  <div class="frosted-backdrop" aria-hidden="true"></div>
+  <div class="vignette" aria-hidden="true"></div>
+
+  <main id="main" class="app-container">
+    <!-- Reuses .hero / .hero-card verbatim so this page needs no CSS of its
+         own beyond the .error-* rules, and inherits every future change to the
+         card treatment for free. -->
+    <section class="hero">
+      <article class="hero-card error-card">
+
+        <header class="card-header">
+          <div class="domain-pill">
+            <span class="pill-dot" aria-hidden="true"></span>
+            <span class="domain-text">ml.box</span>
+          </div>
+        </header>
+
+        <p class="error-code" aria-hidden="true">404</p>
+        <h1 class="error-title">Nothing here</h1>
+        <p class="error-text">
+          That page doesn't exist — or it did once and doesn't now. The front
+          page has everything.
+        </p>
+
+        <footer class="card-footer">
+          <ul class="link-list">
+            <li>
+              <a href="/" class="link-btn">
+                <svg class="link-icon" viewBox="0 0 24 24" width="19" height="19" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M19 12H5"></path>
+                  <path d="m12 19-7-7 7-7"></path>
+                </svg>
+                <span class="btn-text">Back to ml.box</span>
+              </a>
+            </li>
+          </ul>
+        </footer>
+
+      </article>
+    </section>
+  </main>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

@@ -482,6 +482,45 @@ body {
 }
 
 /* ==========================================================================
+   404
+   Rides on .hero-card; only the copy block needs rules of its own.
+   ========================================================================== */
+
+.error-card {
+	text-align: center;
+}
+
+.error-code {
+	font-family: var(--font-mono);
+	font-size: clamp(2.75rem, 12vw, 3.5rem);
+	font-weight: 800;
+	line-height: 1;
+	letter-spacing: -0.04em;
+	/* Big enough to read as an illustration, dim enough not to shout. */
+	color: rgba(255, 255, 255, 0.13);
+	margin-bottom: 0.35rem;
+}
+
+.error-title {
+	font-size: clamp(1.4rem, 5vw, 1.6rem);
+	font-weight: 800;
+	letter-spacing: -0.02em;
+	color: var(--text-main);
+	margin-bottom: 0.6rem;
+}
+
+.error-text {
+	font-size: 0.94rem;
+	line-height: 1.6;
+	color: var(--text-muted);
+	margin-bottom: 1.75rem;
+}
+
+.error-card .link-btn {
+	justify-content: center;
+}
+
+/* ==========================================================================
    Scroll cue
    The hero is a full viewport, so without this the sections below are
    effectively undiscoverable. JS adds .is-scrolled to hide it once moving.
@@ -533,6 +572,26 @@ body {
 	50% {
 		transform: translateY(3px);
 	}
+}
+
+/* ==========================================================================
+   Section reveal
+   Sections below the hero fade up as they enter the viewport. Gated on
+   .is-ready so a visitor without JS is never left staring at opacity: 0, and
+   on .is-revealed so a section that JS never reaches still ends up visible.
+   ========================================================================== */
+
+.is-ready .section.is-observed {
+	opacity: 0;
+	transform: translateY(14px);
+	transition:
+		opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+		transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.is-ready .section.is-observed.is-revealed {
+	opacity: 1;
+	transform: none;
 }
 
 /* ==========================================================================
@@ -685,9 +744,43 @@ body {
 	transition:
 		background-color 0.25s ease,
 		border-color 0.25s ease;
+	/* Anchor for the stretched .contact-link::after hit area below. */
+	position: relative;
 }
 
-a.contact-row:hover {
+/* The mailto anchor renders as the value on the right, but its ::after covers
+   the entire row so the whole card is clickable. The copy button sits above it
+   on the z-axis and stays independently clickable and focusable. */
+.contact-link {
+	text-decoration: none;
+	color: var(--text-muted);
+	transition: color 0.2s ease;
+}
+
+.contact-link::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	border-radius: inherit;
+}
+
+.contact-row:hover .contact-link {
+	color: var(--text-main);
+}
+
+/* The focus ring belongs on the row, not on a zero-height inline anchor. */
+.contact-link:focus-visible {
+	outline: none;
+}
+
+.contact-row:has(.contact-link:focus-visible) {
+	outline: var(--focus-ring);
+	outline-offset: 3px;
+}
+
+/* Only rows that actually go somewhere light up. `.is-static` (Discord) has no
+   link, so it must not pretend to be clickable. */
+.contact-row:has(.contact-link):hover {
 	background: rgba(255, 255, 255, 0.07);
 	border-color: var(--card-border-hover);
 }
@@ -714,6 +807,10 @@ a.contact-row:hover {
 .copy-btn {
 	flex-shrink: 0;
 	margin-left: 0.15rem;
+	/* Lifted out of .contact-link::after's overlay so the click reaches the
+	   button rather than the mailto beneath it. */
+	position: relative;
+	z-index: 1;
 	font-family: var(--font-mono);
 	font-size: 0.68rem;
 	font-weight: 600;
@@ -812,5 +909,42 @@ a.contact-row:hover {
 
 	.scroll-cue svg {
 		animation: none;
+	}
+
+	/* The reveal is opt-out like everything else: no slide, no fade, just the
+	   content. JS also skips registering the observer, but this covers the
+	   window between stylesheet and script. */
+	.is-ready .section.is-observed {
+		opacity: 1;
+		transform: none;
+		transition: none;
+	}
+}
+
+/* ==========================================================================
+   Reduced transparency
+   Nearly every surface here is a backdrop-filter over a live shader. For a
+   visitor who has asked the OS for less of that, swap the frosted panels for
+   flat ones and drop the background to a still, dim wash. Costs less GPU too.
+   ========================================================================== */
+
+@media (prefers-reduced-transparency: reduce) {
+	#webgl-canvas {
+		opacity: 0.35;
+	}
+
+	.frosted-backdrop {
+		backdrop-filter: none;
+		-webkit-backdrop-filter: none;
+		background: rgba(5, 6, 8, 0.72);
+	}
+
+	.hero-card,
+	.panel,
+	.project,
+	.contact-row {
+		backdrop-filter: none;
+		-webkit-backdrop-filter: none;
+		background: #0c0f17;
 	}
 }

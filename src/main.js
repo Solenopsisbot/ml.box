@@ -26,6 +26,56 @@ function initScrollCue() {
 }
 
 /**
+ * Fade each content section up as it enters the viewport.
+ *
+ * Three guards, because a reveal that fails closed hides the whole site:
+ *   - the `is-observed` class is added by JS, so the CSS that sets opacity: 0
+ *     can only ever apply to elements this function has already registered
+ *   - IntersectionObserver missing => nothing is registered, nothing hides
+ *   - prefers-reduced-motion => we never register at all (the stylesheet also
+ *     neutralises the rule, but bailing here saves the observer entirely)
+ *
+ * The observer unregisters each section once revealed: this is a one-shot
+ * entrance, not a scrub-linked effect, so there is nothing to watch afterwards.
+ */
+function initSectionReveal() {
+	if (!('IntersectionObserver' in window)) return;
+	if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+	const sections = document.querySelectorAll('.app-container > .section');
+	if (!sections.length) return;
+
+	const observer = new IntersectionObserver(
+		(entries) => {
+			for (const entry of entries) {
+				if (!entry.isIntersecting) continue;
+				entry.target.classList.add('is-revealed');
+				observer.unobserve(entry.target);
+			}
+		},
+		// Bottom -12%: fire slightly before the section's top edge reaches the
+		// fold, so the animation is already finishing by the time it is
+		// properly in view.
+		//
+		// Top +9999px: anything scrolled *past* still counts as intersecting.
+		// Without it, a jump — a #anchor link, a restored scroll position, a
+		// trackpad fling — lands below sections that were never sampled, and
+		// they stay stuck at opacity 0 above the viewport forever.
+		{ rootMargin: '9999px 0px -12% 0px', threshold: 0 },
+	);
+
+	// Anything already on screen when the module runs is left untouched. The
+	// script is deferred, so those sections may well have painted already —
+	// hiding them now would animate them *out* before animating them back in.
+	const fold = window.innerHeight;
+	for (const section of sections) {
+		if (section.getBoundingClientRect().top < fold) continue;
+		section.classList.add('is-observed');
+		observer.observe(section);
+	}
+}
+
+/**
  * Progressive enhancement for copy-to-clipboard. The button ships with the
  * `hidden` attribute set and is only revealed once we know the API exists, so
  * a visitor without it never sees a dead control — the handle is plain
@@ -72,6 +122,7 @@ function boot() {
 	}
 
 	initScrollCue();
+	initSectionReveal();
 	initCopyButtons();
 
 	// Gates the card entrance animation. A no-JS visitor never gets this class,

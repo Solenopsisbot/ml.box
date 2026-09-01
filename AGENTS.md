@@ -40,7 +40,8 @@ extend the fragment shader. The entire visual is one fullscreen triangle.
 ```
 ml.box/
 ├── index.html                    # Document, meta/OG/JSON-LD, hero markup
-├── vite.config.js                # Explicit build target + asset inline limit
+├── 404.html                      # Served by Pages for unmatched paths
+├── vite.config.js                # Build target, asset inline limit, HTML entries
 ├── wrangler.toml                 # Cloudflare Pages config
 ├── package.json                  # ZERO runtime deps. Keep it that way.
 ├── scripts/
@@ -106,10 +107,37 @@ font at an existing path means clients keep the stale bytes for up to a year.
 `og:image` and `twitter:image` must be absolute (`https://ml.box/og.png`).
 Discord, X and Slack all reject relative paths. This was a real bug.
 
-### 3.7 Styling conventions
+### 3.7 Every HTML entry must be declared in vite.config.js
+Vite only walks `index.html` by default. `build.rollupOptions.input` lists both
+pages; add a third and it will be silently missing from `dist/` until it is
+listed there too. `npm run smoke` loads `/404.html` for exactly this reason.
+
+### 3.8 A copy button cannot live inside a link
+`.contact-row` used to be an `<a>`. It is now a `<div>` holding an anchor plus a
+`.copy-btn`, because a `<button>` nested in an `<a>` is invalid HTML and Chrome
+will not deliver the click to it. The anchor still covers the whole row via
+`.contact-link::after { inset: 0 }`, and the button is lifted above it with
+`z-index: 1`. Do not "simplify" this back — the smoke test asserts
+`a .copy-btn, a button` matches nothing.
+
+### 3.9 Reveal animations must fail open
+`initSectionReveal()` in [src/main.js](src/main.js) adds `.is-observed` from JS,
+and only that class carries `opacity: 0`. A visitor without JS, without
+`IntersectionObserver`, or with reduced motion is never left staring at an
+invisible page. The observer's `rootMargin` has a **+9999px top inset** on
+purpose: without it, a jump past a section (an `#anchor` link, a restored scroll
+position, a fling) leaves it stuck at `opacity: 0` above the viewport forever.
+Sections already on screen when the module runs are skipped entirely, so a
+deferred script cannot animate visible content back out and in.
+
+### 3.10 Styling conventions
 - Vanilla CSS in [src/style.css](src/style.css), tabs for indentation
 - Colors/spacing/radii go through `:root` custom properties
 - No Tailwind or utility-first framework unless the maintainer asks
+- Every glass surface needs a flat counterpart in the
+  `prefers-reduced-transparency` block at the bottom of the stylesheet. Almost
+  the entire page is `backdrop-filter` over a live shader; a visitor who asked
+  the OS for less of that should get less of it.
 
 ---
 
@@ -162,7 +190,12 @@ It asserts: no console errors, WebGL2 context + shader actually producing a
 non-uniform image, resolution caps active, the page scrolls when a section is
 appended, both self-hosted fonts loaded, **zero third-party requests**, the
 reduced-motion path does not start the animation loop, and no horizontal
-overflow at 390px.
+overflow at 390px / 360px / 320px.
+
+It also covers the content contract: every project card links out over https and
+carries a description, the email link / visible text / copy-button value all
+agree, no `<button>` is nested inside an `<a>`, no section is left at opacity 0
+after scrolling the page, and `/404.html` builds, is styled and is `noindex`.
 
 ### Deploy
 
@@ -277,6 +310,7 @@ adding it:
   Shipping a Markdown parser to visitors would undo the entire point of §1.
 - **Per-page OG images**: `scripts/gen-og.mjs` is already parameterised — pass
   the title/tagline in rather than duplicating the script.
-- **sitemap.xml**: currently hand-written with a single URL. Generate it once
-  there is more than one page.
+- **sitemap.xml**: currently hand-written with a single URL and a hand-bumped
+  `<lastmod>`. Generate it once there is more than one *indexable* page — 404.html
+  is `noindex` and deliberately stays out of it.
 - **Keep the hero card static.** See §3.1.

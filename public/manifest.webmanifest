@@ -1,7 +1,7 @@
 {
   "name": "ml.box — solenopsisbot",
   "short_name": "ml.box",
-  "description": "Developer and researcher. Interested in computers, programming, AI/ML, and anime.",
+  "description": "Developer and researcher building Braid, a custom LLM architecture designed to outperform transformers. Also: social AI, finetuning, and RL.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

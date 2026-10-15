@@ -221,7 +221,7 @@ carries a description, the email link / visible text / copy-button value all
 agree, no `<button>` is nested inside an `<a>`, no section is left at opacity 0
 after scrolling the page, and `/404.html` builds, is styled and is `noindex`.
 It also guards the Braid section: no overclaim in body/meta/JSON-LD/manifest
-(§3.11), the hourglass actually narrows to a waist at 1440px *and* at
+(§3.12), the hourglass actually narrows to a waist at 1440px *and* at
 320/360px, the served HTML has no inline `style` attributes, Ayusami is listed,
 and the hero carries GitHub, Hugging Face and contact links.
 

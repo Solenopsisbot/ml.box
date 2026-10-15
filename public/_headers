@@ -35,6 +35,10 @@
   Cache-Control: public, max-age=604800
 /solenopsisbot.webp
   Cache-Control: public, max-age=604800
+# Project marks are copied from each project's own site and get rebranded
+# (Revel's dates from 2026-08), so refreshable rather than immutable.
+/logos/*
+  Cache-Control: public, max-age=604800
 
 # Always revalidate the document so a deploy is visible immediately.
 /

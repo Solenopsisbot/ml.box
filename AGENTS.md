@@ -60,6 +60,7 @@ ml.box/
 │   ├── robots.txt
 │   ├── sitemap.xml
 │   ├── solenopsisbot.webp        # 200x200 avatar
+│   ├── logos/                    # project marks, copied from each project's site
 │   └── fonts/*.woff2             # self-hosted Outfit + JetBrains Mono
 └── src/
     ├── style.css                 # @font-face, tokens, layout, components
@@ -143,7 +144,16 @@ deferred script cannot animate visible content back out and in.
   Drive variants with classes (see `.hg-rate-*` on the Braid hourglass).
   Setting `el.style` from JS is fine; the CSSOM is not blocked.
 
-### 3.11 Braid is described honestly
+### 3.11 Project logos are local copies
+Each mark in `public/logos/` is that project's own favicon, copied in so the
+page makes zero third-party requests. Long design comments are stripped, and
+Logfare's 105 KB / 968px PNG is shrunk to a 96px webp (~4 KB). When a project
+rebrands, re-copy from its live site; `_headers` gives `/logos/*` a one-week
+cache, not `immutable`, for exactly that reason. Every mark sits on the same
+opaque 40px tile. Revel's favicon already *is* a tile, so it gets
+`.project-logo--plated`; the padding modifiers are optical tuning, judged by eye.
+
+### 3.12 Braid is described honestly
 At equal training data a matched transformer still finishes slightly lower
 loss. Braid's win is **time, memory and energy, not quality**. The site used to
 say it "outperforms" transformers in the page, the meta tags, the JSON-LD, the

@@ -985,6 +985,56 @@ body {
 	gap: 0.55rem;
 }
 
+/* Every mark sits on the same 40px tile, so four logos drawn by four
+   different hands still read as one row of cards. The tile is opaque on
+   purpose: these are full-colour marks, and over a live shader a translucent
+   tile would shift their colours as the braid drifts behind them. */
+.project-logo {
+	flex-shrink: 0;
+	display: grid;
+	place-items: center;
+	width: 40px;
+	height: 40px;
+	padding: 6px;
+	border-radius: 11px;
+	background: #141824;
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	margin-right: 0.15rem;
+	transition: border-color 0.25s ease;
+}
+
+.project-logo img {
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+}
+
+.project:hover .project-logo {
+	border-color: rgba(255, 255, 255, 0.24);
+}
+
+/* Revel's favicon already *is* a tile (rounded violet plate, 22% radius). Let
+   it be the tile instead of nesting a plate inside a plate. */
+.project-logo--plated {
+	padding: 0;
+	background: none;
+	border: none;
+}
+
+/* Solexsis's dot grid is 3:2. Extra side padding keeps its visual weight in
+   line with the square marks instead of filling the tile edge to edge. */
+.project-logo--wide {
+	padding: 7px 5px;
+}
+
+/* For marks whose SVG carries its own whitespace (Ayusami's petals sit inside
+   a 64-unit box with a margin), so they read the same size as the raster
+   Logfare logs, which run edge to edge. Optical, not mathematical. */
+.project-logo--snug {
+	padding: 3px;
+}
+
 .project-name {
 	font-size: 1.05rem;
 	font-weight: 700;

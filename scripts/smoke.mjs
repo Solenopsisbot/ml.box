@@ -264,6 +264,25 @@ try {
 		projects.map((p) => p.href).join(', '),
 	);
 
+	// Logos are lazy, so bring them into view and wait for decode before
+	// judging. A 404 would leave naturalWidth at 0; a non-local src would also
+	// trip the third-party check, but say so here where the cause is obvious.
+	const logos = await page.evaluate(async () => {
+		document.querySelector('#projects').scrollIntoView({ behavior: 'instant' });
+		const imgs = [...document.querySelectorAll('.project')].map((a) => a.querySelector('.project-logo img'));
+		await Promise.all(imgs.map((i) => i?.decode().catch(() => {})));
+		window.scrollTo({ top: 0, behavior: 'instant' });
+		return imgs.map((i) => ({
+			src: i?.getAttribute('src') ?? null,
+			ok: !!i && i.naturalWidth > 0 && i.getAttribute('src').startsWith('/logos/'),
+		}));
+	});
+	check(
+		'every project shows a self-hosted logo',
+		logos.length >= 4 && logos.every((l) => l.ok),
+		logos.map((l) => `${l.src}${l.ok ? '' : ' (BROKEN)'}`).join(', '),
+	);
+
 	// Braid's honest result: a matched transformer still finishes slightly
 	// lower loss at equal data, and the win is systems cost. The site used to
 	// claim it "outperforms" transformers, in the page, the meta, the manifest

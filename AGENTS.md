@@ -138,6 +138,20 @@ deferred script cannot animate visible content back out and in.
   `prefers-reduced-transparency` block at the bottom of the stylesheet. Almost
   the entire page is `backdrop-filter` over a live shader; a visitor who asked
   the OS for less of that should get less of it.
+- **No `style=""` attributes in markup.** The CSP is `style-src 'self'`, so an
+  inline style works in `npm run dev` and silently does nothing in production.
+  Drive variants with classes (see `.hg-rate-*` on the Braid hourglass).
+  Setting `el.style` from JS is fine; the CSSOM is not blocked.
+
+### 3.11 Braid is described honestly
+At equal training data a matched transformer still finishes slightly lower
+loss. Braid's win is **time, memory and energy, not quality**. The site used to
+say it "outperforms" transformers in the page, the meta tags, the JSON-LD, the
+manifest and the OG card all at once, which is exactly what an ML reader checks
+first. Every Braid number on the page is copied from
+<https://solexsis.com/braid>, which is the source of truth; update them together.
+The smoke test fails if "outperform" or "more performant" appears anywhere
+machine-readable.
 
 ---
 
@@ -196,6 +210,10 @@ It also covers the content contract: every project card links out over https and
 carries a description, the email link / visible text / copy-button value all
 agree, no `<button>` is nested inside an `<a>`, no section is left at opacity 0
 after scrolling the page, and `/404.html` builds, is styled and is `noindex`.
+It also guards the Braid section: no overclaim in body/meta/JSON-LD/manifest
+(§3.11), the hourglass actually narrows to a waist at 1440px *and* at
+320/360px, the served HTML has no inline `style` attributes, Ayusami is listed,
+and the hero carries GitHub, Hugging Face and contact links.
 
 ### Deploy
 

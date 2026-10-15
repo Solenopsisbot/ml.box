@@ -258,6 +258,68 @@ try {
 		projects.map((p) => p.href).join(', '),
 	);
 
+	check(
+		'Ayusami listed',
+		projects.some((p) => p.href === 'https://ayusami.ml.box'),
+		projects.map((p) => p.href).join(', '),
+	);
+
+	// Braid's honest result: a matched transformer still finishes slightly
+	// lower loss at equal data, and the win is systems cost. The site used to
+	// claim it "outperforms" transformers, in the page, the meta, the manifest
+	// and the OG card at once. Guard every machine-readable copy of it.
+	const overclaim = await page.evaluate(async () => {
+		const re = /outperform|more performant|better than (a|the) transformer/i;
+		const hits = [];
+		if (re.test(document.body.innerText)) hits.push('body text');
+		for (const m of document.querySelectorAll('meta[content]')) {
+			if (re.test(m.content)) hits.push(m.getAttribute('name') ?? m.getAttribute('property'));
+		}
+		for (const s of document.querySelectorAll('script[type="application/ld+json"]')) {
+			if (re.test(s.textContent)) hits.push('json-ld');
+		}
+		const manifest = await fetch('/manifest.webmanifest').then((r) => r.text());
+		if (re.test(manifest)) hits.push('manifest');
+		return hits;
+	});
+	check('no Braid overclaim anywhere on the page', overclaim.length === 0, overclaim.join(', '));
+
+	// The hourglass encodes rate as width purely through CSS classes. If the
+	// stylesheet broke, or someone switched to inline style="" (which the CSP
+	// blocks in production), every row would render the same width.
+	const hourglass = await page.evaluate(() => {
+		const rows = [...document.querySelectorAll('.hourglass .hg-row')];
+		const w = (sel) => document.querySelector(`.hourglass ${sel}`)?.getBoundingClientRect().width ?? 0;
+		return { rows: rows.length, full: w('.hg-rate-1'), mid: w('.hg-rate-4'), waist: w('.hg-rate-16') };
+	});
+	check(
+		'Braid hourglass renders narrowing to a waist',
+		hourglass.rows === 6 && hourglass.full > hourglass.mid && hourglass.mid > hourglass.waist,
+		`${hourglass.rows} rows, widths ${Math.round(hourglass.full)} > ${Math.round(hourglass.mid)} > ${Math.round(hourglass.waist)}`,
+	);
+
+	// CSP is style-src 'self': a style="" attribute in shipped markup works in
+	// `npm run dev` and silently does nothing in production. Parse the served
+	// HTML rather than the live DOM, because JS legitimately sets styles via
+	// the CSSOM (which CSP allows).
+	const inlineStyles = await page.evaluate(async () => {
+		const html = await fetch('/').then((r) => r.text());
+		return new DOMParser().parseFromString(html, 'text/html').querySelectorAll('[style]').length;
+	});
+	check('no inline style attributes in shipped HTML (CSP)', inlineStyles === 0, `${inlineStyles} found`);
+
+	const heroLinks = await page.evaluate(() =>
+		[...document.querySelectorAll('.hero-card .link-btn')].map((a) => a.getAttribute('href')),
+	);
+	check(
+		'hero links: GitHub, Hugging Face, contact',
+		heroLinks.length === 3 &&
+			heroLinks.includes('https://github.com/Solenopsisbot') &&
+			heroLinks.includes('https://huggingface.co/Solenopsisbot') &&
+			heroLinks.includes('#contact'),
+		heroLinks.join(', '),
+	);
+
 	// The reveal must fail open: a section JS never reached is still readable.
 	const revealed = await page.evaluate(async () => {
 		window.scrollTo({ top: document.body.scrollHeight, behavior: 'instant' });
@@ -356,6 +418,17 @@ try {
 				emailFits: v.scrollWidth <= v.clientWidth + 1,
 			};
 		});
+		// The waist has a max() floor for readability; make sure it never
+		// clamps to the same width as the ÷4 rows and flattens the shape.
+		const hg = await mPage.evaluate(() => {
+			const w = (sel) => document.querySelector(`.hourglass ${sel}`).getBoundingClientRect().width;
+			return { full: w('.hg-rate-1'), mid: w('.hg-rate-4'), waist: w('.hg-rate-16') };
+		});
+		check(
+			`hourglass keeps its shape at ${width}px`,
+			hg.full - hg.mid >= 12 && hg.mid - hg.waist >= 12,
+			`${Math.round(hg.full)} > ${Math.round(hg.mid)} > ${Math.round(hg.waist)}`,
+		);
 		check(
 			`no horizontal overflow at ${width}px, email not clipped`,
 			narrow.overflow <= 1 && narrow.emailFits,

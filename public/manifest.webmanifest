@@ -1,7 +1,7 @@
 {
   "name": "ml.box — solenopsisbot",
   "short_name": "ml.box",
-  "description": "Developer and researcher building Braid, a custom LLM architecture designed to outperform transformers. Also: social AI, finetuning, and RL.",
+  "description": "Researcher building Braid, a byte-level language model with no tokenizer, and Ayusami, a framework for computer friends.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

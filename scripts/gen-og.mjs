@@ -26,7 +26,7 @@ const FONT_DIR = join(ROOT, '.cache', 'fonts-ttf');
    Edit these two lines when the branding copy changes, then `npm run og`. */
 const WORDMARK = 'ml.box';
 const EYEBROW = 'SOLENOPSISBOT';
-const TAGLINE = 'Building Braid — a custom LLM architecture designed to outperform the transformer.';
+const TAGLINE = 'Building Braid — a byte-level language model with no tokenizer and no transformer.';
 /* -------------------------------------------------------------------------- */
 
 const BRAND = {
